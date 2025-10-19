@@ -60,6 +60,10 @@ export default function Footer() {
             <FaInstagram />
             </div>
         </div>
+
+        <div class="footer-bottom">
+            <p>© 2025 Atlatl Advisers. All Rights Reserved.</p>
+        </div>
     </footer>
   );
 }
