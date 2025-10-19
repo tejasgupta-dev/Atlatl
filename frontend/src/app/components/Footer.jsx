@@ -17,11 +17,11 @@ export default function Footer() {
                 </li>
                 <li className="footer-list-item">
                     <FaRegEnvelope />
-                    <div>info@atlantladvisers.com</div>
+                    <Link href="mailto:info@atlantladvisers.com">info@atlantladvisers.com</Link>
                 </li>
                 <li className="footer-list-item">
                     <FaPhone />
-                    <div>608-351-4500</div>
+                    <Link href="tel:6083514500">608-351-4500</Link>
                 </li>
             </ul>
         </div>
@@ -56,8 +56,8 @@ export default function Footer() {
         <div> {/** Connect With Us */}
             <h1>CONNECT WITH US</h1>
             <div className="footer-list-item-2">
-            <FaLinkedin />
-            <FaInstagram />
+            <Link href="https://www.linkedin.com/company/atlatladvisers/"><FaLinkedin /></Link>
+            <Link href="https://www.instagram.com/atlatladvisers/?hl=en"><FaInstagram /></Link>
             </div>
         </div>
 

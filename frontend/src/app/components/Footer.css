@@ -39,8 +39,30 @@
   display: flex;
   flex-direction: column;
   align-items: start;
-  font-size: 18px;
-  gap: 6px;  
+  font-size: 16px;
+  gap: 8px;  
+}
+
+.footer-list a {
+  position: relative;
+  text-decoration: none; 
+  color: white; 
+}
+
+/* Underline animation */
+.footer-list a::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0%;
+  height: 2px;
+  background-color: #FFFFFF;
+  transition: width 0.3s ease;
+}
+
+.footer-list a:hover::after {
+  width: 100%;
 }
 
 .footer-list-item {
@@ -65,3 +87,4 @@
   font-size: 16px;
   color: #ffffff; /* slightly lighter than white */
 }
+
