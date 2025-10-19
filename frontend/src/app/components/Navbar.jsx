@@ -15,11 +15,11 @@ export default function Navbar() {
 
       {/* Navigation Links */}
       <div className="navbar-links">
-        <Link href="/about-us">About Us</Link>
-        <Link href="/services">Services</Link>
-        <Link href="/resources">Resources</Link>
-        <Link href="/contact-us">Contact Us</Link>
-        <Link href="/log-in" className="login-button">Log In</Link>
+        <Link href="/about-us">ABOUT US</Link>
+        <Link href="/services">SERVICES</Link>
+        <Link href="/resources">RESOURCES</Link>
+        <Link href="/contact-us">CONTACT US</Link>
+        <Link href="/log-in" className="login-button">LOG IN</Link>
       </div>
     </nav>
   );
