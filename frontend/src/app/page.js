@@ -39,6 +39,40 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* About Us Section */}
+      <section className="font-sans bg-dark-blue py-16 md:py-24 text-white">
+        <div className="container mx-auto px-10">
+          <div className="rounded-2xl p-8">
+            <h2 className="text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight mb-12 text-left font-songer">
+              ABOUT <br />ATLATL ADVISERS
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
+              {/* Left Column: Image */}
+              <div className="justify-center col-[1]">
+                <img
+                  src="https://placehold.co/800x600/EAEAEA/333?text=Adviser"
+                  alt="A financial adviser meeting with a client."
+                  className="rounded-3xl w-full h-auto max-w-md shadow-2xl object-cover"
+                />
+              </div>
+
+              {/* Right Column: Text Content */}
+              <div className="h-full flex flex-col justify-start gap-6 font-work-sans">
+                <p className="text-xl font-bold">
+                  Atlatl Advisers is a multi-family office wealth manager and a fully
+                  independent, fee-only SEC Registered Investment Adviser.
+                </p>
+                <p className="text-xl">
+                  We help qualified individuals and families comprehensively manage
+                  their financial wellness with a focus on fiduciary responsibility,
+                  personalized service, and holistic planning.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
