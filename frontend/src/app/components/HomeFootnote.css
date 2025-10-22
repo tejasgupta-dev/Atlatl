@@ -1,0 +1,54 @@
+@font-face {
+  font-family: 'SONGER SemiExpanded';
+  src: url('/fonts/songer.semiexpanded-bold.otf') format('opentype');
+  font-weight: heavy;
+  font-style: normal;
+  font-display: swap;
+}
+
+.footnote-section {
+    font-family: 'Work-Sans', sans-serif;
+    display: flex;
+    justify-content: space-around;
+    margin-top: 30px; 
+    margin-bottom: 60px; 
+}
+
+.word-board {
+    width: 70%; 
+    margin: 0 5%; 
+    padding: 0px 30px; 
+    border-radius: 30px;
+    border-width: 1px;
+    background-color: #C6E2FF;
+}
+
+.flashcard {
+    color: #245383; 
+    border-bottom: 1px solid;
+    padding: 56px 0; 
+}
+
+.flashcard-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.flashcard-button { 
+    font-size: 42px; 
+}
+
+.flashcard-button:hover {
+    cursor: pointer;
+}
+
+.word-board .flashcard:last-child {
+    border-bottom: none;
+}
+
+.flashcard h2 {
+    font-family: 'SONGER SemiExpanded', sans-serif;
+    font-size: 42px; 
+    font-weight: heavy;
+}
