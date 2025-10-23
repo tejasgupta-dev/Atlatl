@@ -27,6 +27,7 @@ export default function HomeFootnote() {
                 <Flashcard title="PLAN">In our second meeting, we'll review your initial financial plan, providing personalized recommedations to optimize your overall strategy. This includes guidance on estate planning, tax efficiency, and insurance solutions to help protect and grow your wealth.</Flashcard>
                 <Flashcard title="AGREE">Together, we develop a comprehensive strategy that balances both sides of your financial picture, providing solutions to help you achieve your goals at every state of your life.</Flashcard>
                 <Flashcard title="IMPLEMENT">Once we establish the framework of our partnership, we'll guide you through a seamless onboarding process, integrating you into our client portals and putting your tailored financial plan into action. </Flashcard>
+                <Flashcard title="REVIEW">Once your comprehensive financial plan is in place, we will meet regularly to review your investments and address key areas such as tax strategies, estate planning, and insurance to ensure your plan remains aligned with your goals.</Flashcard>
             </div>
             <div className="ad-board">
                 <h1>THE PROCESS</h1>
