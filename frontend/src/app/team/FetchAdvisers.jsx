@@ -53,7 +53,7 @@ const listOfAdvisers = [
         title: "Retirement Plan Adviser", 
         certifications: ["QKA", "CPFA"],
         image_url: "images/Mary12-600x841.jpg",
-        description: "Mary serves as the Retirement Plan Adviser at Atlatl Advisers.  She assists advisers, consultants, and plan sponsors in assessing and enhancing retirement plans.  Mary’s professional background spans more than three decades and includes the following specialties:\n-Vendor reviews and management\n-Request For Proposals\nPlan design review and implementation\nCompliance testing and analysis\n-Fiduciary consulting, oversight, and liability\n-ERISA §3(21) and §3(38) fiduciary duties\n-ERISA §3(21) and §3(38) fiduciary duties\nShe has achieved the Qualified 401(k) Administrator (QKA) and Certified Plan Fiduciary Adviser (CPFA) designations through the American Society of Pension Professionals & Actuaries (ASPPA).  Mary also holds a Series 65 license.  Mary is a published author and the Chair of ASPPA’s Plan Consultant Magazine. She was also named on National Association of Plan Advisors’ (NAPA) list of Top Women Advisors as an MVP in 2015 and an All-Star in 2016 and 2020."
+        description: "Mary serves as the Retirement Plan Adviser at Atlatl Advisers.  She assists advisers, consultants, and plan sponsors in assessing and enhancing retirement plans.  Mary’s professional background spans more than three decades and includes the following specialties:\n-Vendor reviews and management\n-Request For Proposals\n-Plan design review and implementation\n-Compliance testing and analysis\n-Fiduciary consulting, oversight, and liability\n-ERISA §3(21) and §3(38) fiduciary duties\n-ERISA §3(21) and §3(38) fiduciary duties\nShe has achieved the Qualified 401(k) Administrator (QKA) and Certified Plan Fiduciary Adviser (CPFA) designations through the American Society of Pension Professionals & Actuaries (ASPPA).  Mary also holds a Series 65 license.  Mary is a published author and the Chair of ASPPA’s Plan Consultant Magazine. She was also named on National Association of Plan Advisors’ (NAPA) list of Top Women Advisors as an MVP in 2015 and an All-Star in 2016 and 2020."
     }, 
     {
         id: "timpr", 
@@ -101,6 +101,11 @@ export default async function fetchAdvisers() {
     return listOfAdvisers; 
 }
 
-export function fetchAdvisersById(id) {
-  return listOfAdvisers.find(adviser => adviser.id === id) || null;m // Not optimized
+export async function fetchAdvisersById(id) {
+  for (let i = 0; i < listOfAdvisers.length; ++i) {
+    if (listOfAdvisers[i].id === id) {
+        return listOfAdvisers[i]; 
+    }
+  }
+  return null; 
 }
