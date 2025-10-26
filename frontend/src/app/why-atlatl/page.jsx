@@ -100,6 +100,57 @@ export default function WhyAtlatlPage() {
                 </div>
             </section>
 
+            <h1 className="commitment-title">OUR COMMITMENT</h1>
+
+            <section className="commitment-section">
+                <div className="commitment-box-layout">
+
+                    <div className="commitment-box">
+                        <Image 
+                            src="/compass.svg" 
+                            alt="Quality Logo" 
+                            width={50} 
+                            height={50} 
+                            className="commitment-logo" 
+                        />
+                        <h3>Client Stewardship</h3>
+                        <p>
+                            We are committed to providing an overall level of expertise that creates results for our clients that are specific to their aspirations. Exemplary service across the full range of our clients’ needs is our paramount and unrelenting focus.​ We consistently strive for excellence in all that we do.
+                        </p>
+                    </div>
+
+                    <div className="commitment-box">
+                        <Image 
+                            src="/shield-half.svg" 
+                            alt="Innovation Logo" 
+                            width={50} 
+                            height={50} 
+                            className="commitment-logo" 
+                        />
+                        <h3>Integrity as the standard</h3>
+                        <p>
+                            We have an unwavering commitment to operate with integrity, trust, and sincerity, at all times. We are upheld and regulated to a Fiduciary Duty which means we always act in the best interest of our clients. We strive to ensure that our employees, clients, and communities are proud of the Firm, its history, its legacy, its reputation, and what it stands for.
+                        </p>
+                    </div>
+
+                    <div className="commitment-box">
+                        <Image 
+                            src="/book.svg" 
+                            alt="Support Logo" 
+                            width={50} 
+                            height={50} 
+                            className="commitment-logo" 
+                        />
+                        <h3>Education</h3>
+                        <p>
+                            We believe strong relationships begin with education and understanding. By learning each client’s background and goals, we deliver more personalized and lasting guidance. This approach helps us engage with multiple generations and deepen the impact of our work. We’re equally dedicated to ongoing development so we can remain informed and proactive in addressing the evolving needs of our clients.
+                        </p>
+                    </div>
+
+                </div>
+            </section>
+
+                
         </main>
     );
 }

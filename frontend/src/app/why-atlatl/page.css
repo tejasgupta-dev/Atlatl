@@ -143,7 +143,7 @@
 .info-section {
     display: grid;
     grid-template-columns: auto auto;
-    margin-bottom: 5rem;
+    margin-bottom: 3rem;
 }
 
 .info-box {
@@ -182,4 +182,73 @@
     position: relative;
     overflow: hidden;
     margin: 3.5vw;
+}
+
+.commitment-title {
+    font-family: 'SONGER SemiExpanded', sans-serif;
+    font-size: 5rem;
+}
+
+.commitment-section {
+  width: 100%;
+  text-align: center;
+  padding: 3rem 0;
+  background: linear-gradient(to bottom, #C6E2FF 50%, #07315C 50%);
+}
+
+.commitment-box-layout {
+  display: flex;
+  justify-content: center;
+  gap: 4rem;
+  flex-wrap: wrap;
+  padding: 2rem;
+}
+
+/* Each box */
+.commitment-box {
+  width: 25rem;
+  height: 32rem;
+  background-color: #074B8F;
+  border-radius: 30px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  box-sizing: border-box;
+  color: #fff;
+  text-align: left;
+}
+
+/* Logo inside box */
+.commitment-logo {
+  width: clamp(4vw, 5vw, 6vw);
+  height: auto;
+  opacity: 1;
+  color: #C6E2FF;
+  margin-bottom: 1rem;
+}
+
+/* Heading */
+.commitment-box h3 {
+  font-family: 'SONGER SemiExpanded', sans-serif;
+  font-weight: 700;
+  font-size: 1.5rem;
+  text-align: center;
+  width: 100%;
+  min-height: 5rem;
+  margin-bottom: 1rem;
+}
+
+/* Paragraph */
+.commitment-box p {
+  font-family: sans-serif;
+  font-weight: 400;
+  font-size: 1rem;
+  line-height: 1.5;
+  text-align: left;
+  width: 100%;
+  margin-top: 0;
+  padding-left: 0.5rem;
+  padding-right: 0.25rem;
 }
