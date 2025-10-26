@@ -38,35 +38,6 @@ export default async function HomeTeam() {
             </div>
           )
         })}
-        {/* <div className="flex flex-col items-center font-work-sans text-center lg:w-[30%]">
-          <img
-            src="images/placeholder-vertical.png"
-            className="h-[220px] sm:h-[260px] lg:h-[300px] object-cover mb-4"
-            alt="Ross Fedenia"
-          />
-          <h2 className="font-songer text-lg font-bold">ROSS FEDENIA, CFP</h2>
-          <div>Founder and CEO</div>
-        </div>
-
-        <div className="flex flex-col items-center font-work-sans text-center lg:w-[30%]">
-          <img
-            src="images/placeholder-vertical.png"
-            className="h-[220px] sm:h-[260px] lg:h-[300px] object-cover mb-4"
-            alt="Mark Fedenia"
-          />
-          <h2 className="font-songer text-lg font-bold">MARK FEDENIA, PH.D</h2>
-          <div>Director of Investments</div>
-        </div>
-
-        <div className="flex flex-col items-center font-work-sans text-center lg:w-[30%]">
-          <img
-            src="images/placeholder-vertical.png"
-            className="h-[220px] sm:h-[260px] lg:h-[300px] object-cover mb-4"
-            alt="Stephanie Kaminski"
-          ></img>
-          <h2 className="font-songer text-lg font-bold">STEPHANIE KAMINSKI</h2>
-          <div>Director of Operations</div>
-        </div> */}
       </div>
 
       <button

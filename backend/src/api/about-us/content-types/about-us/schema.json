@@ -16,7 +16,8 @@
       "required": true
     },
     "aboutUsDescription": {
-      "type": "string"
+      "type": "text",
+      "required": true
     }
   }
 }

@@ -33,8 +33,7 @@ async function fetchStrapiData(path, urlParams = "", options = {}) {
 
   } catch (error) {
     console.error("Failed to fetch Strapi data:", error);
-    // Handle network errors or other fetch-related issues
-    return null; // Prevent page crash
+    return null; 
   }
 }
 

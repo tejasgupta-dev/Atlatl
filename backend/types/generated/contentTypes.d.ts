@@ -441,7 +441,7 @@ export interface ApiAboutUsAboutUs extends Struct.SingleTypeSchema {
     draftAndPublish: true;
   };
   attributes: {
-    aboutUsDescription: Schema.Attribute.String;
+    aboutUsDescription: Schema.Attribute.Text & Schema.Attribute.Required;
     aboutUsTitle: Schema.Attribute.String & Schema.Attribute.Required;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
