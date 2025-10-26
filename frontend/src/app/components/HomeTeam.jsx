@@ -21,7 +21,7 @@ export default function HomeTeam() {
         <div className="flex flex-col items-center font-work-sans text-center lg:w-[30%]">
           <img
             src="images/placeholder-vertical.png"
-            className="h-[280px] sm:h-[320px] lg:h-[360px] object-cover mb-4"
+            className="h-[220px] sm:h-[260px] lg:h-[300px] object-cover mb-4"
             alt="Ross Fedenia"
           />
           <h2 className="font-songer text-lg font-bold">ROSS FEDENIA, CFP</h2>
@@ -31,7 +31,7 @@ export default function HomeTeam() {
         <div className="flex flex-col items-center font-work-sans text-center lg:w-[30%]">
           <img
             src="images/placeholder-vertical.png"
-            className="h-[280px] sm:h-[320px] lg:h-[360px] object-cover mb-4"
+            className="h-[220px] sm:h-[260px] lg:h-[300px] object-cover mb-4"
             alt="Mark Fedenia"
           />
           <h2 className="font-songer text-lg font-bold">MARK FEDENIA, PH.D</h2>
@@ -41,7 +41,7 @@ export default function HomeTeam() {
         <div className="flex flex-col items-center font-work-sans text-center lg:w-[30%]">
           <img
             src="images/placeholder-vertical.png"
-            className="h-[280px] sm:h-[320px] lg:h-[360px] object-cover mb-4"
+            className="h-[220px] sm:h-[260px] lg:h-[300px] object-cover mb-4"
             alt="Stephanie Kaminski"
           ></img>
           <h2 className="font-songer text-lg font-bold">STEPHANIE KAMINSKI</h2>
