@@ -18,13 +18,13 @@ export default async function HomeTeam() {
         </p>
       </div>
       <div className="w-full flex flex-col lg:flex-row items-center lg:items-start lg:justify-between px-6 lg:px-[15%] gap-12 lg:gap-8 bg-gradient-to-b from-dark-blue from-50% to-white to-50% text-text-light-blue">
-        {teamMembers.map((teamMember) => {
+        {teamMembers.map((teamMember, index) => {
           const imageUrl = teamMember.photo.url;
           const fullImageUrl = process.env.NEXT_PUBLIC_STRAPI_API_URL ? `${process.env.NEXT_PUBLIC_STRAPI_API_URL}${imageUrl}` : "localhost:1337" + imageUrl;
           return (
             <div
               key={teamMember.id}
-              className="flex flex-col items-center font-work-sans text-center lg:w-[30%]"
+              className={`flex flex-col items-center font-work-sans text-center lg:w-[30%] ${index < Math.floor(teamMembers.length / 2) ? "text-white lg:text-text-light-blue" : ""}`}
             >
               <img
                 src={fullImageUrl}
