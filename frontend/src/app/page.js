@@ -35,7 +35,7 @@ export default async function Home() {
 
             {/* Right Column: Image */}
             <div className="flex items-center justify-center">
-              {getMediaComponent(homepageContent?.heroImage, "Hero")}
+              {getMediaComponent(homepageContent?.heroImage, "Hero", true, "rounded-[100px] w-full h-auto max-w-[360px] lg:max-w-md shadow-2xl object-cover")}
             </div>
           </div>
         </div>
@@ -52,13 +52,12 @@ export default async function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
               {/* Left Column: Image */}
               <div className="justify-center col-[1]">
-                <img
-                  src="https://placehold.co/800x600/EAEAEA/333?text=Adviser"
-                  width={800}
-                  height={600}
-                  alt="A financial adviser meeting with a client."
-                  className="rounded-3xl w-full h-auto max-w-md shadow-2xl object-cover"
-                />
+                {getMediaComponent(
+                  homepageContent?.aboutUsImage,
+                  "About Us",
+                  false,
+                  "aspect-4/3 rounded-[30px] shadow-2xl object-cover"
+                )}
               </div>
 
               {/* Right Column: Text Content */}

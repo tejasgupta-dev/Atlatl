@@ -7,13 +7,18 @@ export const getFullMediaUrl = (url) => {
   return url;
 };
 
-export const getMediaComponent = (media, placholderText) => {
+export const getMediaComponent = (
+  media,
+  placholderText,
+  forceSquare = false,
+  className
+) => {
   if (!media?.url) {
     return (
       <img
         src={`https://placehold.co/600x600/378CE7/ffffff?text=${placholderText}`}
         alt={placholderText}
-        className="rounded-[100px] w-full h-auto max-w-[360px] lg:max-w-md shadow-2xl object-cover"
+        className={className} // Apply all classes directly
       />
     );
   }
@@ -22,21 +27,28 @@ export const getMediaComponent = (media, placholderText) => {
   const isVideo = media?.ext === ".mp4";
 
   if (isVideo) {
+    // If 'forceSquare' is true, the component adds 'aspect-square' and 'overflow-hidden'.
+    if (forceSquare) {
+      return (
+        <div className={`${className} aspect-square overflow-hidden`}>
+          {/* The inner video just needs to fill and cover */}
+          <video className="w-full h-full object-cover" autoPlay loop muted>
+            <source src={mediaURL} type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+        </div>
+      );
+    }
+
+    // For a normal video, apply all classes directly
     return (
-      <div className="w-full max-w-[360px] lg:max-w-md aspect-square shadow-2xl rounded-[100px] overflow-hidden">
-        <video className="w-full h-full object-cover" autoPlay loop muted>
-          <source src={mediaURL} type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
-      </div>
-    );
-  } else {
-    return (
-      <img
-        src={mediaURL}
-        alt={placholderText}
-        className="rounded-[100px] w-full h-auto max-w-[360px] lg:max-w-md shadow-2xl object-cover"
-      />
+      <video className={className} autoPlay loop muted>
+        <source src={mediaURL} type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
     );
   }
+
+  // For a normal image, apply all classes directly
+  return <img src={mediaURL} alt={placholderText} className={className} />;
 };
