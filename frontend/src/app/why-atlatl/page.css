@@ -1,3 +1,8 @@
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 .why-atlatl {
     display: flex;
     flex-direction: column;
@@ -20,60 +25,75 @@
 
 /* Title at top center */
 .title {
-    font-size: 6rem;
-    font-weight: 400;
+    font-size: clamp(2rem, 6vw, 5rem);
+    font-weight: 0;
     text-align: center;
-    padding-top: 100px;
-    padding-bottom: 50px;
+    padding-top: clamp(5rem, 10vw, 9rem);
+    padding-bottom: clamp(2rem, 10vw, 3rem)
 }
 
 /* Below title: text on left, logo on right */
 .definition-row {
     display: flex;
     justify-content: space-between;
-    align-items: center;
     width: 100%;
-    gap: 2rem;
-    flex-wrap: wrap;
-    padding: 0 5rem 5rem 10rem;
+    padding-right: clamp(1rem, 10vw, 10rem);
+    padding-left: clamp(1rem, 10vw, 10rem);
+    padding-bottom: clamp(2rem, 10vw, 5rem);
+    padding-top: 0;
 }
 
 /* Text column */
 .definition {
     flex: 1;
-    min-width: 280px;
+    flex-direction: column;
+    text-align: left;
 }
 
 /* Phonetic */
 .phonetic {
-    font-size: 3rem;
-    margin-bottom: 1.5rem;
-    line-height: 3rem;
+    font-size: clamp(1.25rem, 4vw, 3rem);
+    margin-bottom: clamp(1rem, 4vw, 1.5rem);
+    line-height: clamp(1.25rem, 4vw, 3rem);
 }
 
 /* Description */
 .description {
     font-family: 'Tenorite', sans-serif;
-    font-size: 1.8rem;
-    line-height: 3rem;
-    font-weight: 400;
+    font-size: clamp(1rem, 4vw, 1.8rem);
+    line-height: clamp(1.5rem, 4vw, 3rem);
+    min-width: 50%;
     letter-spacing: 0%;
-    vertical-align: middle;
 }
 
 /* Logo on right */
 .logo-container {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  height: 50%;
 }
 
 .logo {
-    width: clamp(350px, 25vw, 300px);
+    width: clamp(50px, 25vw, 400px);
     height: auto;
     opacity: 1;
     color: #C6E2FF;
+}
+
+@media (max-width: 768px) {
+  .logo-container {
+    flex: 1;
+  }
+
+  .description {
+    font-family: 'Tenorite', sans-serif;
+    font-size: clamp(1rem, 4vw, 1.8rem);
+    line-height: clamp(1.5rem, 4vw, 3rem);
+    min-width: 200%;
+    letter-spacing: 0%;
+    padding-top: clamp(1rem, 4vw, 2rem);
+  }
 }
 
 /* Video Section */
@@ -82,37 +102,20 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 0;
     background: linear-gradient(to bottom, #07315C 0%, #07315C 50%, #C6E2FF 50%, #C6E2FF 100%);
-    margin-bottom: 4rem;
+    margin-bottom: clamp(1rem, 4vw, 4rem);
+    padding-left: clamp(1rem, 8vw, 10rem);
+    padding-right: clamp(1rem, 8vw, 10rem);
 }
 
 .baby-video {
-    width: min(90%, 1200px);
-    aspect-ratio: 16/9;
-    border-radius: 30px;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 2.19 / 1;
+    border-radius: clamp(10px, 4vw, 30px);
     box-shadow: 0px 18px 30px 0px #00000029;
     object-fit: cover;
 }
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .definition-row {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-    }
-
-    .definition {
-        margin-bottom: 2rem;
-    }
-
-    .logo {
-        transform: rotate(-90deg);
-        width: 180px;
-    }
-}
-
 
 /* CTA Section */
 .cta-section {
@@ -120,79 +123,86 @@
     justify-content: center;
     align-items: center;
     text-align: center;
-    padding: 3rem 1rem;
+    padding-top: clamp(1.5rem, 4vw, 3rem);
+    padding-bottom: clamp(2rem, 20vw, 10rem);
     width: 100%;
 }
 
 .cta-text h2 {
     font-family: 'SONGER SemiExpanded', sans-serif;
     font-weight: 700;
-    font-size: clamp(32px, 3vw, 64px);
-    max-width: 1000px;
+    font-size: clamp(1.25rem, 4vw, 3rem);
+    max-width: clamp(300px, 75vw, 1000px);
     line-height: 1;
     text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: clamp(1rem, 4vw, 2rem);
 }
 
 .cta-text p {
     font-family: 'Tenorite', sans-serif;
-    font-size: clamp(16px, 2vw, 24px);
+    font-size: clamp(0.5rem, 3vw, 2rem);
 }
 
 /* Info Section */
 .info-section {
     display: grid;
-    grid-template-columns: auto auto;
-    margin-bottom: 3rem;
+    grid-template-columns: 1fr 1fr;
+    place-items: center;
+    padding-left: clamp(1rem, 8vw, 10rem);
+    padding-right: clamp(1rem, 8vw, 10rem);
+    align-items: center;
+    gap: clamp(1rem, 4vw, 6rem);
+    padding-bottom: clamp(5rem, 10vw, 10rem);
 }
 
 .info-box {
     background-color: #074B8F;
     color: #FFFFFF;
-    width: 35vw;
-    height: 105vh;
-    border-radius: 20px;
+    width: clamp(100%, 40vw, 80%);
+    height: 100%;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: flex-start;
-    padding: 0 3rem;
+    padding-top: clamp(4rem, 20vw, 20rem);
+    padding-bottom: clamp(4rem, 20vw, 20rem);
+    padding-left: clamp(0.25rem, 4vw, 3rem);
+    padding-right: clamp(0.25rem, 4vw, 10rem);
     text-align: left;
-    line-height: 1.6;
     box-sizing: border-box;
-    margin: 3.5vw;
+    border-radius: 20px;
 }
 
 .info-box h2 {
-    font-size: 3rem;
+    font-size: clamp(0.5rem, 4vw, 3rem);
     font-family: 'SONGER SemiExpanded', sans-serif;
     font-weight: 700;
     margin-bottom: 1.5rem;
 }
 
 .info-box p {
-    font-size: 1.5rem;
+    font-size: clamp(0.5rem, 3vw, 1.5rem);
     font-family: sans-serif;
 }
 
 .info-image {
-    width: 35vw;
-    height: 105vh;
+    width: clamp(100%, 40vw, 80%);
+    height: 100%;
     border-radius: 20px;
     position: relative;
     overflow: hidden;
-    margin: 3.5vw;
 }
 
 .commitment-title {
     font-family: 'SONGER SemiExpanded', sans-serif;
-    font-size: 5rem;
+    font-size: clamp(1.5rem, 4vw, 5rem);
 }
 
 .commitment-section {
   width: 100%;
   text-align: center;
-  padding: 3rem 0;
+  padding: clamp(0.5rem, 3vw, 1.5rem) 0;
+
   background: linear-gradient(to bottom, #C6E2FF 50%, #07315C 50%);
 }
 
