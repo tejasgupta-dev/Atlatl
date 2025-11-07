@@ -108,7 +108,7 @@ export default function WhyAtlatlPage() {
                     <div className="commitment-box">
                         <Image
                             src="/compass.svg"
-                            alt="Quality Logo"
+                            alt="commitment logo"
                             width={50}
                             height={50}
                             className="commitment-logo"
@@ -122,7 +122,7 @@ export default function WhyAtlatlPage() {
                     <div className="commitment-box">
                         <Image
                             src="/shield-half.svg"
-                            alt="Innovation Logo"
+                            alt="commitment logo"
                             width={50}
                             height={50}
                             className="commitment-logo"
@@ -136,7 +136,7 @@ export default function WhyAtlatlPage() {
                     <div className="commitment-box">
                         <Image
                             src="/book.svg"
-                            alt="Support Logo"
+                            alt="commitment logo"
                             width={50}
                             height={50}
                             className="commitment-logo"
@@ -174,7 +174,7 @@ export default function WhyAtlatlPage() {
                         <div className="our-purpose-right-body-header">
                             <Image
                                 src="/compass.svg"
-                                alt="Quality Logo"
+                                alt="commitment-logo"
                                 width={50}
                                 height={50}
                                 className="commitment-logo"
@@ -190,7 +190,7 @@ export default function WhyAtlatlPage() {
                         <div className="our-purpose-right-body-header">
                             <Image
                                 src="/compass.svg"
-                                alt="Quality Logo"
+                                alt="commitment-logo"
                                 width={50}
                                 height={50}
                                 className="commitment-logo"
@@ -215,7 +215,7 @@ export default function WhyAtlatlPage() {
                     <div className="people-purpose-images-each">
                         <Image
                             src="/images/ross.webp"
-                            alt="Quality Logo"
+                            alt="Ross Fedenia"
                             width={50}
                             height={50}
                             className="commitment-logo"
@@ -230,7 +230,7 @@ export default function WhyAtlatlPage() {
                     <div className="people-purpose-images-each">
                         <Image
                             src="/images/mark.jpg"
-                            alt="Quality Logo"
+                            alt="Mark Fedenia"
                             width={50}
                             height={50}
                             className="commitment-logo"
@@ -245,7 +245,7 @@ export default function WhyAtlatlPage() {
                     <div className="people-purpose-images-each">
                         <Image
                             src="/images/Steph1.jpg"
-                            alt="Quality Logo"
+                            alt="Stephanie Kaminski"
                             width={50}
                             height={50}
                             className="commitment-logo"
@@ -266,7 +266,7 @@ export default function WhyAtlatlPage() {
             <section className="final">
                 <Image
                     src="/images/logo_blue.svg"
-                    alt="Decorative bottom-left image"
+                    alt="Logo"
                     className="final-image"
                     width={300}
                     height={300}
