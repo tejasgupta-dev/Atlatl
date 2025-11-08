@@ -215,8 +215,8 @@ html, body {
 
 /* Each box */
 .commitment-box {
-  width: 25rem;
-  height: 32rem;
+  width: clamp(21rem, 45vh, 40rem);
+  height: clamp(32rem, 20vh, 35rem);
   background-color: #074B8F;
   border-radius: 30px;
   padding: 1.5rem;
@@ -399,7 +399,7 @@ html, body {
 
 .people-purpose button {
   margin-top: clamp(2.5rem, 10vw, 10rem);
-  font-size: clamp(0.25rem, 1.5vw, 1.8rem);
+  font-size: clamp(0.75rem, 1.5vw, 1.8rem);
   margin-bottom: clamp(2.5rem, 3.5vw, 5rem);
   font-weight: 0;
   background: #378CE7;
@@ -459,7 +459,7 @@ html, body {
 
 .final-body button {
   margin-top: clamp(2.5rem, 7.5vw, 10rem);
-  font-size: clamp(0.25rem, 1.5vw, 1.8rem);
+  font-size: clamp(0.5rem, 1.5vw, 1.8rem);
   font-weight: 0;
   background: #378CE7;
   padding: clamp(0.4rem, 0.8vw, 0.8rem) clamp(1rem, 2vw, 2.5rem);
