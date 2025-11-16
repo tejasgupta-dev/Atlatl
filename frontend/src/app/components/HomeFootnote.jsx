@@ -93,7 +93,7 @@ export default function HomeFootnote() {
   return (
     <div
       className="container font-work-sans flex flex-col lg:flex-row justify-start lg:justify-center items-center lg:items-stretch
-                    gap-5 mx-auto px-10"
+                gap-5 xl:gap-12 mx-auto px-10"
     >
       <div
         className="
