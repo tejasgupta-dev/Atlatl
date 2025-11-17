@@ -1,69 +1,138 @@
 "use client";
 
 import Link from "next/link";
-import "./Footer.css";
-import { FaLink, FaLocationDot, FaPhone } from "react-icons/fa6";
+import { FaLocationDot, FaPhone } from "react-icons/fa6";
 import { FaRegEnvelope, FaInstagram, FaLinkedin } from "react-icons/fa";
 
 export default function Footer() {
+  const quickLinkItems = [
+    { name: "Home", href: "/" },
+    { name: "Why Atlatl", href: "/why-atlatl" },
+    { name: "Our Services", href: "/" },
+    { name: "Meet The Team", href: "/" },
+    { name: "Client Experience", href: "/" },
+    { name: "Contact Us", href: "/" },
+    { name: "FAQ", href: "/" },
+    { name: "Blog", href: "/" },
+  ];
+
+  const moreInfoItems = [
+    { name: "Privacy Policy", href: "/" },
+    { name: "From ADV2A", href: "/" },
+    { name: "From CRS", href: "/" },
+  ];
+
+  const headingStyles = "font-songer text-3xl mb-4";
+  const underlineStyles = `
+    block h-0.5 bg-white transition-all duration-300 
+    max-w-0 group-hover:max-w-full
+  `;
+  const listItemStyles = "flex items-center gap-5";
+
   return (
-    <footer className="footer">
-        <div>  {/** Atlantl Advisors Information */}
-            <h1>ATLANTL ADVISERS</h1>
-            <ul className="footer-list">
-                <li className="footer-list-item">
-                    <FaLocationDot />
-                    <div>2921 Landmark Pl, Suite 501 <br /> Madison, WI 53713</div>
-                </li>
-                <li className="footer-list-item">
-                    <FaRegEnvelope />
-                    <Link href="mailto:info@atlantladvisers.com">info@atlantladvisers.com</Link>
-                </li>
-                <li className="footer-list-item">
-                    <FaPhone />
-                    <Link href="tel:6083514500">608-351-4500</Link>
-                </li>
-            </ul>
-        </div>
-
-        <div>  {/** Quick Links */}
-            <h1>QUICK LINKS</h1>
-            <nav>
-                <div className="footer-list">
-                <Link href="/ ">Home</Link>
-                <Link href="/why-atlatl">Why Atlatl</Link>
-                <Link href="/">Our Services</Link>
-                <Link href="/">Meet The Team</Link>
-                <Link href="/">Client Experience</Link>
-                <Link href="/">Contact Us</Link>
-                <Link href="/">FAQ</Link>
-                <Link href="/">Blog</Link>
-                </div>
-            </nav>
-        </div>
-
-        <div>  {/** More Information */}
-            <h1>MORE INFORMATION</h1>
-                        <nav>
-                <div className="footer-list">
-                <Link href="/ ">Privacy Policy</Link>
-                <Link href="/">From ADV2A</Link>
-                <Link href="/">From CRS</Link>
-                </div>
-            </nav>
-        </div>
-
-        <div> {/** Connect With Us */}
-            <h1>CONNECT WITH US</h1>
-            <div className="footer-list-item-2">
-            <Link href="https://www.linkedin.com/company/atlatladvisers/"><FaLinkedin /></Link>
-            <Link href="https://www.instagram.com/atlatladvisers/?hl=en"><FaInstagram /></Link>
+    <footer
+      className="
+      relative w-full bg-dark-blue text-white font-work-sans
+      p-12
+      flex flex-col gap-10 lg:flex-row lg:justify-around lg:items-start
+    "
+    >
+      {/* Column 1: Atlatl Advisers Information */}
+      <div className="flex flex-col gap-2">
+        <h1 className={headingStyles}>ATLATL ADVISERS</h1>
+        <ul className="flex flex-col gap-2 text-base">
+          <li className={listItemStyles}>
+            <FaLocationDot size={20}/>
+            <div>
+              2921 Landmark Pl, Suite 501, Madison, WI 53713
             </div>
-        </div>
+          </li>
+          <li className={listItemStyles}>
+            <FaRegEnvelope size={20}/>
+            <Link href="mailto:info@atlantladvisers.com" className="group">
+              info@atlantladvisers.com
+              <span className={underlineStyles} />
+            </Link>
+          </li>
+          <li className={listItemStyles}>
+            <FaPhone size={20}/>
+            <Link href="tel:6083514500" className="group">
+              608-351-4500
+              <span className={underlineStyles} />
+            </Link>
+          </li>
+        </ul>
+      </div>
 
-        <div className="footer-bottom">
-            <p>© 2025 Atlatl Advisers. All Rights Reserved.</p>
+      {/* Column 2: Quick Links */}
+      <div>
+        <h1 className={headingStyles}>QUICK LINKS</h1>
+        <nav className="flex flex-col items-start gap-2 text-base">
+          {quickLinkItems.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className="group"
+              >
+                {item.name}
+                <span className={underlineStyles} />
+              </Link>
+            ))}
+        </nav>
+      </div>
+
+      {/* Column 3: More Information */}
+      <div>
+        <h1 className={headingStyles}>MORE INFORMATION</h1>
+        <nav className="flex flex-col items-start gap-2 text-base">
+          {moreInfoItems.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className="group"
+              >
+                {item.name}
+                <span className={underlineStyles} />
+              </Link>
+            ))}
+        </nav>
+      </div>
+
+      {/* Column 4: Connect With Us */}
+      <div>
+        <h1 className={headingStyles}>CONNECT WITH US</h1>
+        <div className="flex gap-2 text-[30px]">
+          <Link
+            href="https://www.linkedin.com/company/atlatladvisers/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-gray-300 transition-colors"
+          >
+            <FaLinkedin />
+          </Link>
+          <Link
+            href="https://www.instagram.com/atlatladvisers/?hl=en"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-gray-300 transition-colors"
+          >
+            <FaInstagram />
+          </Link>
         </div>
+      </div>
+
+      {/* Copyright Footer */}
+      {/* Mobile: Static position, centered, with margin top.
+          Desktop (lg+): Absolute position bottom right
+      */}
+      <div
+        className="
+        text-white text-base mt-8 text-center
+        lg:absolute lg:bottom-2.5 lg:right-5 lg:mt-0
+        "
+      >
+        <p>© 2025 Atlatl Advisers. All Rights Reserved.</p>
+      </div>
     </footer>
   );
 }

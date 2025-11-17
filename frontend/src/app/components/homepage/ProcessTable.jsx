@@ -80,7 +80,7 @@ function Flashcard({ title, children, isOpen, onToggle }) {
   );
 }
 
-export default function HomeFootnote() {
+export default function ProcessTable() {
   // State to track which card is open (by its title)
   const [openCard, setOpenCard] = useState(null);
 

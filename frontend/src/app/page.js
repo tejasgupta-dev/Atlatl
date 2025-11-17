@@ -1,5 +1,5 @@
-import HomeTeam from "./components/HomeTeam";
-import HomeFootnote from "./components/HomeFootnote";
+import HomeTeam from "./components/homepage/HomeTeam";
+import HomeFootnote from "./components/homepage/ProcessTable";
 import { getHomepageContent } from "@/lib/strapi";
 import AboutUs from "./components/homepage/AboutUs";
 import Hero from "./components/homepage/Hero";
