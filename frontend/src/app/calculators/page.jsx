@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { CalculatorBase } from '../components/Calculators/CalculatorBase';
 import { config as _401k } from '../components/Calculators/configs/401k/config';
 import { config as rmd } from '../components/Calculators/configs/rmd-beneficiary/config/config';
-import { config as companyStock } from '../components/Calculators/configs/company-stock-distribution/config';
+import { config as companyStock } from '../components/Calculators/configs/company-stock-distribution/config/config';
 import { config as rothVsTraditional } from '../components/Calculators/configs/roth-vs-traditional/config';
 import { config as armVsFixed } from '../components/Calculators/configs/arm-vs-fixed/config';
 import { config as simpleIra } from '../components/Calculators/configs/roth-ira/config';
