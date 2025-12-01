@@ -42,6 +42,10 @@
     },
     "suffix": {
       "type": "string"
+    },
+    "description": {
+      "type": "richtext",
+      "required": false
     }
   }
 }

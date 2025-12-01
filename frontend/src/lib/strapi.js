@@ -42,16 +42,32 @@ async function fetchStrapiData(path, urlParams = "", options = {}) {
  */
 export async function getFeaturedTeamMembers(isFeatured = true) {
   const path = "/api/team-members";
-  const params = isFeatured ? "?filters[featured][$eq]=true&populate=*" : "?populate=*";
+  let params = "?fields[0]=name&fields[1]=position&fields[2]=slug&fields[3]=suffix&populate=*"
+  if (isFeatured) {
+    params += "&filters[featured][$eq]=true"
+  }
   const options = { cache: "no-store" };
   const json = await fetchStrapiData(path, params, options);
-
   if (!json || !json.data) {
     console.warn("No featured team members found or API error.");
     return []; // Return an empty array
   }
   
   return json.data;
+}
+
+export async function getTeamMemberDetails(slug) {
+  console.log(slug)
+  const path = "/api/team-members";
+  const params = `?filters[slug][$eq]=${slug}&populate=*`;
+  const options = { cache: "no-store" };
+  const json = await fetchStrapiData(path, params, options);
+  if (!json || !json.data) {
+    console.warn("No team member details found or API error.");
+    return null;
+  }
+  console.log(json.data[0])
+  return json.data[0];
 }
 
 export async function getHomepageContent() {
