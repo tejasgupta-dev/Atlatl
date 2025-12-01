@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AutoChart } from './AutoChart';
@@ -15,8 +15,22 @@ export const CalculatorBase = ({ config }) => {
         formState: { errors }
     } = useForm({
         resolver: zodResolver(config.schema),
-        defaultValues: config.defaultValues
+        defaultValues: config.defaultValues,
+        mode: 'onChange',
+        resetOptions: {
+            keepDirtyValues: false,
+            keepErrors: false,
+        }
     });
+
+    // Force initialization with defaults on mount
+    useEffect(() => {
+        // Use setTimeout to ensure this runs after component is fully mounted
+        const timer = setTimeout(() => {
+            reset(config.defaultValues);
+        }, 0);
+        return () => clearTimeout(timer);
+    }, [config.defaultValues, reset]);
 
     const onSubmit = (data) => {
         const calculatedResults = config.calculate(data);
@@ -24,7 +38,7 @@ export const CalculatorBase = ({ config }) => {
     };
 
     const handleReset = () => {
-        reset();
+        reset(config.defaultValues);
         setResults(null);
     };
 
@@ -66,6 +80,17 @@ export const CalculatorBase = ({ config }) => {
                         </option>
                     ))}
                 </select>
+            );
+        }
+
+        // For checkbox inputs
+        if (input.type === 'checkbox') {
+            return (
+                <input
+                    type="checkbox"
+                    {...register(input.name)}
+                    className="w-5 h-5 border-2 border-bold-blue rounded focus:outline-none focus:ring-2 focus:ring-bold-blue"
+                />
             );
         }
 
@@ -141,12 +166,34 @@ export const CalculatorBase = ({ config }) => {
             );
         }
 
-        // Default input for number, etc.
+        // For number inputs WITHOUT format - use Controller to ensure defaults work
+        if (input.type === 'number' && !input.format) {
+            return (
+                <Controller
+                    name={input.name}
+                    control={control}
+                    render={({ field }) => (
+                        <input
+                            type="number"
+                            value={field.value ?? ''}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                field.onChange(val === '' ? 0 : parseFloat(val));
+                            }}
+                            onBlur={field.onBlur}
+                            placeholder={input.placeholder}
+                            step={input.step}
+                            className="w-full px-3 py-2 border-2 border-bold-blue rounded-lg focus:outline-none focus:ring-2 focus:ring-bold-blue font-work-sans"
+                        />
+                    )}
+                />
+            );
+        }
+
+        // Default fallback for any other input types
         return (
             <input
-                {...register(input.name, {
-                    valueAsNumber: input.type === 'number' && !input.format
-                })}
+                {...register(input.name)}
                 type={input.type}
                 placeholder={input.placeholder}
                 step={input.step}
