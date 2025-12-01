@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AutoChart } from './AutoChart';
-import { CurrencyInput, PercentageInput, DateInput } from './InputComponents';
+import { TextInput, CurrencyInput, PercentageInput, DateInput } from './InputComponents';
 
 export const CalculatorBase = ({ config }) => {
     const [results, setResults] = useState(null);
@@ -30,7 +30,7 @@ export const CalculatorBase = ({ config }) => {
 
     const formatValue = (value, format) => {
         if (value === null || value === undefined) return 'N/A';
-        
+
         if (format === 'currency') {
             return new Intl.NumberFormat('en-US', {
                 style: 'currency',
@@ -122,11 +122,30 @@ export const CalculatorBase = ({ config }) => {
             );
         }
 
-        // Default input for text, number, etc.
+        // For text inputs
+        if (input.type === 'text') {
+            return (
+                <Controller
+                    name={input.name}
+                    control={control}
+                    render={({ field }) => (
+                        <TextInput
+                            value={field.value}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            placeholder={input.placeholder}
+                            maxLength={input.maxLength}
+                        />
+                    )}
+                />
+            );
+        }
+
+        // Default input for number, etc.
         return (
             <input
-                {...register(input.name, { 
-                    valueAsNumber: input.type === 'number' && !input.format 
+                {...register(input.name, {
+                    valueAsNumber: input.type === 'number' && !input.format
                 })}
                 type={input.type}
                 placeholder={input.placeholder}
