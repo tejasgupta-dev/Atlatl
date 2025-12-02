@@ -1,16 +1,10 @@
 import { z } from 'zod';
 
 export const schema = z.object({
-  balanceAtDistribution: z.number().min(0, 'Must be 0 or greater'),
-  costBasis: z.number().min(0, 'Must be 0 or greater'),
-  rateOfReturn: z.number().min(-100, 'Must be -100% or greater').max(200, 'Must be 200% or less'),
-  holdingPeriodYears: z.number().min(0, 'Must be 0 or greater').max(50, 'Must be 50 years or less'),
-  holdingPeriodMonths: z.number().min(0, 'Must be 0 or greater').max(11, 'Must be 11 months or less'),
-  capitalGainsRate: z.number().min(0, 'Must be 0 or greater').max(100, 'Must be 100% or less'),
-  marginalTaxRate: z.number().min(0, 'Must be 0 or greater').max(100, 'Must be 100% or less'),
-  inflationRate: z.number().min(0, 'Must be 0 or greater').max(100, 'Must be 100% or less'),
-  currentAge: z.number().min(0, 'Must be 0 or greater').max(120, 'Must be 120 or less'),
-  separatedAtAge55: z.boolean(),
-  retirementDistributionAfter59Half: z.boolean(),
-  iraDistributionAfter59Half: z.boolean(),
+  mortgageAmount: z.number().min(0, 'Must be 0 or greater'),
+  interestRate: z.number().min(0, 'Must be 0 or greater').max(100, 'Must be 100% or less'),
+  originalTermYears: z.number().min(1, 'Must be at least 1 year').max(50, 'Must be 50 years or less'),
+  firstPaymentDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be a valid date in YYYY-MM-DD format'),
+  monthlyEscrow: z.number().min(0, 'Must be 0 or greater'),
+  monthlyPrepayment: z.number().min(0, 'Must be 0 or greater'),
 });

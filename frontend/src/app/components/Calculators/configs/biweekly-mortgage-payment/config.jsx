@@ -4,8 +4,8 @@ import { inputs } from './inputs';
 import { results } from './results';
 
 export const config = {
-  title: 'Company Stock Distribution Analysis Calculator',
-  description: 'Compare NUA (Net Unrealized Appreciation) strategy versus IRA rollover for company stock distributions from your retirement plan',
+  title: 'Biweekly Mortgage Payment Calculator for an Existing Mortgage',
+  description: 'Calculate savings by making biweekly payments instead of monthly payments on your existing mortgage',
   schema,
   defaultValues: defaults,
   inputs,
@@ -13,233 +13,230 @@ export const config = {
 
   calculate: (data) => {
     /*
-    Dinkytown-style implementation:
-     - NUA = FMV at distribution - cost basis
-     - At distribution (NUA strategy): pay ordinary income tax on cost basis now (and 10% penalty on cost basis if not qualified)
-     - NUA portion is taxed as long-term capital gain when sold (even if sold immediately)
-     - Appreciation AFTER distribution: taxed as short-term (ordinary) if sold within 1 year, otherwise long-term capital gain
-     - IRA rollover: entire amount taxed as ordinary income when withdrawn (plus 10% penalty if applicable)
-     - Present value calculations: discount FUTURE taxes to present using inflationRate
+    Biweekly Payment Strategy:
+    - Pay 1/2 of monthly payment every 2 weeks (26 payments per year = 13 monthly payments)
+    - Every 6th payment includes an extra 1/2 payment (making it 1.5x monthly payment)
+    - This results in one extra monthly payment per year going directly to principal
+    - Also handle optional escrow and prepayment amounts
     */
 
-    const nua = data.balanceAtDistribution - data.costBasis;
+    const principal = data.mortgageAmount;
+    const annualRate = data.interestRate / 100;
+    const monthlyRate = annualRate / 12;
+    const totalMonths = data.originalTermYears * 12;
 
-    // Convert holding period to decimal years
-    const holdingYears = data.holdingPeriodYears + (data.holdingPeriodMonths || 0) / 12;
+    // Calculate standard monthly payment (P&I only)
+    const monthlyPayment = principal * 
+      (monthlyRate * Math.pow(1 + monthlyRate, totalMonths)) / 
+      (Math.pow(1 + monthlyRate, totalMonths) - 1);
 
-    // Future FMV after holding period (applies equally for both strategies)
-    const fmvAtSale = data.balanceAtDistribution * Math.pow(1 + data.rateOfReturn / 100, holdingYears);
+    // Calculate months elapsed since first payment
+    const startDate = new Date(data.firstPaymentDate);
+    const today = new Date();
+    const monthsElapsed = Math.max(0, 
+      (today.getFullYear() - startDate.getFullYear()) * 12 + 
+      (today.getMonth() - startDate.getMonth())
+    );
 
-    // Appreciation that occurs AFTER the distribution event
-    const appreciationAfterDistribution = fmvAtSale - data.balanceAtDistribution;
+    // Calculate current balance using amortization formula
+    let currentBalance = principal;
+    if (monthsElapsed > 0 && monthsElapsed < totalMonths) {
+      currentBalance = principal * 
+        (Math.pow(1 + monthlyRate, totalMonths) - Math.pow(1 + monthlyRate, monthsElapsed)) /
+        (Math.pow(1 + monthlyRate, totalMonths) - 1);
+    } else if (monthsElapsed >= totalMonths) {
+      currentBalance = 0;
+    }
 
-    // Penalty conditions:
-    // For cost-basis taxation at distribution (NUA initial tax), penalty applies unless separatedAtAge55 OR distribution is at/after 59.5
-    const penaltyOnRetirementDist = !(data.separatedAtAge55 || data.retirementDistributionAfter59Half);
-    // For IRA distributions (rolled-over funds), penalty applies if IRA distribution occurs before 59.5
-    const penaltyOnIraDist = !data.iraDistributionAfter59Half;
+    const remainingMonthsOriginal = Math.max(0, totalMonths - monthsElapsed);
 
-    // ===== NUA STRATEGY =====
-    // Initial tax at distribution: cost basis taxed at ordinary marginal tax rate now
-    const nuaInitialTax = data.costBasis * (data.marginalTaxRate / 100);
-    const nuaInitialPenalty = penaltyOnRetirementDist ? data.costBasis * 0.10 : 0;
-    const nuaTotalInitialTax = nuaInitialTax + nuaInitialPenalty;
+    // Calculate remaining interest on monthly schedule
+    let monthlyInterestPaid = 0;
+    let balance = currentBalance;
+    for (let i = 0; i < remainingMonthsOriginal; i++) {
+      const interest = balance * monthlyRate;
+      monthlyInterestPaid += interest;
+      balance -= (monthlyPayment - interest);
+      if (balance <= 0) break;
+    }
 
-    // Future taxes when stock is sold:
-    // - NUA portion taxed at long-term capital gains rate (per Dinkytown: treated as long-term cap gain even if sold immediately)
-    const nuaPortionTaxAtSale = Math.max(0, nua) * (data.capitalGainsRate / 100);
+    // Biweekly calculation
+    const biweeklyPayment = monthlyPayment / 2;
+    const biweeklyEscrow = data.monthlyEscrow / 2;
+    const biweeklyPrepayment = data.monthlyPrepayment / 2;
+    
+    // Biweekly rate (approximate: monthly rate / 2)
+    const biweeklyRate = monthlyRate / 2;
 
-    // - Appreciation after distribution taxed as:
-    //     * ordinary income (marginal tax rate) if holding < 1 year
-    //     * long-term capital gains if holding >= 1 year
-    const appreciationTaxRate = holdingYears >= 1 ? (data.capitalGainsRate / 100) : (data.marginalTaxRate / 100);
-    const appreciationTaxAtSale = Math.max(0, appreciationAfterDistribution) * appreciationTaxRate;
+    // Simulate biweekly payments with extra payment every 6th payment
+    let biweeklyBalance = currentBalance;
+    let biweeklyInterestPaid = 0;
+    let biweeklyPaymentCount = 0;
+    let paymentNumber = 0;
 
-    const nuaTotalFutureTax = nuaPortionTaxAtSale + appreciationTaxAtSale;
+    while (biweeklyBalance > 0 && biweeklyPaymentCount < 2000) { // Safety limit
+      biweeklyPaymentCount++;
+      paymentNumber++;
+      
+      const interest = biweeklyBalance * biweeklyRate;
+      biweeklyInterestPaid += interest;
+      
+      // Every 6th payment is 1.5x the normal payment (creating the extra annual payment)
+      const principalPayment = (paymentNumber % 6 === 0) 
+        ? (biweeklyPayment * 1.5) - interest + biweeklyPrepayment
+        : biweeklyPayment - interest + biweeklyPrepayment;
+      
+      biweeklyBalance -= principalPayment;
+      
+      if (biweeklyBalance < 0) {
+        // Adjust final payment
+        biweeklyInterestPaid += biweeklyBalance * biweeklyRate;
+        biweeklyBalance = 0;
+      }
+    }
 
-    // Total taxes (initial + future)
-    const nuaTotalTax = nuaTotalInitialTax + nuaTotalFutureTax;
-
-    // Net proceeds at sale (future value basis): FMV at sale minus ALL taxes paid (initial taxes were paid now, but for "future value" comparison we subtract all taxes)
-    const nuaNetProceeds = fmvAtSale - nuaTotalFutureTax - nuaTotalInitialTax; // taxes already removed
-
-    // Present value calculations:
-    // Discount only FUTURE taxes to present using inflationRate (per Dinkytown: discount future tax distributions).
-    const discountRate = data.inflationRate / 100;
-    const pvNuaFutureTax = nuaTotalFutureTax / Math.pow(1 + discountRate, holdingYears);
-    const pvNuaTotalTax = nuaTotalInitialTax + pvNuaFutureTax; // initial tax is "now" (no discount)
-    const pvNuaNetProceeds = data.balanceAtDistribution - pvNuaTotalTax;
-
-    // ===== IRA ROLLOVER STRATEGY =====
-    // If rolled over to IRA, the whole balance grows and when withdrawn later it's taxed as ordinary income (marginal)
-    const iraFmvAtSale = fmvAtSale;
-    const iraTotalTaxAtSale = iraFmvAtSale * (data.marginalTaxRate / 100);
-    const iraPenaltyAtSale = penaltyOnIraDist ? iraFmvAtSale * 0.10 : 0;
-    const iraTotalTaxWithPenalty = iraTotalTaxAtSale + iraPenaltyAtSale;
-
-    const iraNetProceeds = iraFmvAtSale - iraTotalTaxWithPenalty;
-
-    // Present value for IRA: discount future tax (all taxed at withdrawal) to present
-    const pvIraTax = iraTotalTaxWithPenalty / Math.pow(1 + discountRate, holdingYears);
-    const pvIraNetProceeds = data.balanceAtDistribution - pvIraTax;
-
-    // ===== Comparison & summary metrics =====
-    const advantage = nuaNetProceeds - iraNetProceeds;
-    const advantagePercent = iraNetProceeds !== 0 ? (advantage / Math.abs(iraNetProceeds)) * 100 : 0;
-
-    const pvAdvantage = pvNuaNetProceeds - pvIraNetProceeds;
-    const pvAdvantagePercent = pvIraNetProceeds !== 0 ? (pvAdvantage / Math.abs(pvIraNetProceeds)) * 100 : 0;
-
-    // Recommendation: compare present-value advantage (gives 'today' basis)
-    const betterStrategy = pvAdvantage > 0 ? 'NUA Strategy' : 'IRA Rollover';
+    // Calculate savings
+    const interestSavings = monthlyInterestPaid - biweeklyInterestPaid;
+    const timeSavedMonths = remainingMonthsOriginal - (biweeklyPaymentCount / 2);
+    const timeSavedYears = timeSavedMonths / 12;
 
     return {
       // Basic metrics
-      nua,
-      fmvAtSale,
-      appreciationAfterDistribution,
+      monthlyPayment,
+      biweeklyPayment,
+      totalBiweeklyPayment: biweeklyPayment + biweeklyEscrow + biweeklyPrepayment,
+      currentBalance,
+      remainingMonthlyPayments: remainingMonthsOriginal,
+      remainingBiweeklyPayments: biweeklyPaymentCount,
 
-      // NUA Strategy breakdown
-      nuaInitialTax,
-      nuaInitialPenalty,
-      nuaTotalInitialTax,
-      nuaPortionTaxAtSale,
-      appreciationTaxAtSale,
-      nuaTotalFutureTax,
-      nuaTotalTax,
-      nuaNetProceeds,
-      pvNuaFutureTax,
-      pvNuaTotalTax,
-      pvNuaNetProceeds,
+      // Interest comparison
+      monthlyInterestPaid,
+      biweeklyInterestPaid,
+      interestSavings,
 
-      // IRA Rollover breakdown
-      iraTotalTaxAtSale,
-      iraPenaltyAtSale,
-      iraTotalTaxWithPenalty,
-      iraNetProceeds,
-      pvIraTax,
-      pvIraNetProceeds,
+      // Time saved
+      timeSavedMonths,
+      timeSavedYears,
 
-      // Comparison
-      advantage,
-      advantagePercent,
-      pvAdvantage,
-      pvAdvantagePercent,
-      betterStrategy,
+      // Summary
+      summary: interestSavings > 0 
+        ? `By switching to biweekly payments, you'll save ${formatCurrency(interestSavings)} in interest and pay off your mortgage ${timeSavedYears.toFixed(1)} years earlier.`
+        : 'Continue with your current payment schedule.',
 
-      // Detailed breakdown for display
+      // Detailed breakdown
       breakdown: [
-        { label: 'NUA Amount', value: nua, format: 'currency' },
-        { label: 'Cost Basis', value: data.costBasis, format: 'currency' },
-        { label: 'Initial Distribution FMV', value: data.balanceAtDistribution, format: 'currency' },
-        { label: 'Projected FMV at Sale', value: fmvAtSale, format: 'currency' },
-        { label: 'Post-Distribution Appreciation', value: appreciationAfterDistribution, format: 'currency' },
+        { label: 'Original Loan Amount', value: principal, format: 'currency' },
+        { label: 'Current Balance', value: currentBalance, format: 'currency' },
+        { label: 'Monthly Payment (P&I)', value: monthlyPayment, format: 'currency' },
+        { label: 'Biweekly Payment', value: biweeklyPayment, format: 'currency' },
+        { label: 'Total Biweekly Payment', value: biweeklyPayment + biweeklyEscrow + biweeklyPrepayment, format: 'currency' },
       ],
 
-      nuaBreakdown: [
-        { label: 'Tax on Cost Basis (Ordinary Income)', value: nuaInitialTax, format: 'currency' },
-        { label: 'Penalty on Cost Basis (if applicable)', value: nuaInitialPenalty, format: 'currency' },
-        { label: 'Total Initial Tax', value: nuaTotalInitialTax, format: 'currency' },
-        { label: 'Tax on NUA (Capital Gains)', value: nuaPortionTaxAtSale, format: 'currency' },
-        { label: 'Tax on Appreciation (At Sale)', value: appreciationTaxAtSale, format: 'currency' },
-        { label: 'Total Future Tax', value: nuaTotalFutureTax, format: 'currency' },
-        { label: 'Total Tax (All)', value: nuaTotalTax, format: 'currency' },
-        { label: 'Net Proceeds (Future Value)', value: nuaNetProceeds, format: 'currency' },
+      monthlySchedule: [
+        { label: 'Remaining Payments', value: remainingMonthsOriginal, format: 'number' },
+        { label: 'Total Interest to be Paid', value: monthlyInterestPaid, format: 'currency' },
+        { label: 'Payoff Time', value: `${Math.floor(remainingMonthsOriginal / 12)} years ${remainingMonthsOriginal % 12} months`, format: 'text' },
       ],
 
-      iraBreakdown: [
-        { label: 'Tax on Full Amount (Ordinary Income)', value: iraTotalTaxAtSale, format: 'currency' },
-        { label: 'Early Withdrawal Penalty (if applicable)', value: iraPenaltyAtSale, format: 'currency' },
-        { label: 'Total Tax', value: iraTotalTaxWithPenalty, format: 'currency' },
-        { label: 'Net Proceeds (Future Value)', value: iraNetProceeds, format: 'currency' },
+      biweeklySchedule: [
+        { label: 'Remaining Payments', value: biweeklyPaymentCount, format: 'number' },
+        { label: 'Total Interest to be Paid', value: biweeklyInterestPaid, format: 'currency' },
+        { label: 'Payoff Time', value: `${Math.floor(biweeklyPaymentCount / 26)} years ${Math.round((biweeklyPaymentCount % 26) / 2.17)} months`, format: 'text' },
       ],
 
-      // Notes (human friendly)
+      savingsBreakdown: [
+        { label: 'Interest Savings', value: interestSavings, format: 'currency' },
+        { label: 'Time Saved', value: `${Math.floor(timeSavedYears)} years ${Math.round((timeSavedYears % 1) * 12)} months`, format: 'text' },
+      ],
+
       notes: [
-        `Holding period: ${data.holdingPeriodYears} years and ${data.holdingPeriodMonths} months`,
-        penaltyOnRetirementDist ? 'Early withdrawal penalty (10%) applied to NUA initial distribution (cost basis)' : 'No early withdrawal penalty on NUA initial distribution',
-        penaltyOnIraDist ? 'Early withdrawal penalty (10%) will apply to IRA distribution' : 'No early withdrawal penalty on IRA distribution',
-        `NUA portion is treated as long-term capital gain (taxed at ${data.capitalGainsRate}%).`,
-        holdingYears < 1
-          ? 'Appreciation after distribution will be taxed as ordinary income (short-term) because holding period is under 1 year.'
-          : 'Appreciation after distribution will be taxed as long-term capital gain because holding period is at least 1 year.',
-        `The ${betterStrategy} provides ${Math.abs(pvAdvantagePercent).toFixed(2)}% ${pvAdvantage > 0 ? 'more' : 'less'} net proceeds on a present-value basis.`,
-      ],
+        'Biweekly payments are achieved by paying half your monthly payment every two weeks.',
+        'Every 6th payment includes an extra half payment (1.5x normal biweekly amount).',
+        'This results in the equivalent of one extra monthly payment per year.',
+        `Current monthly payment: ${formatCurrency(monthlyPayment)} (principal & interest only)`,
+        data.monthlyEscrow > 0 ? `Monthly escrow: ${formatCurrency(data.monthlyEscrow)} (${formatCurrency(biweeklyEscrow)} biweekly)` : null,
+        data.monthlyPrepayment > 0 ? `Monthly prepayment: ${formatCurrency(data.monthlyPrepayment)} (${formatCurrency(biweeklyPrepayment)} biweekly)` : null,
+      ].filter(Boolean),
     };
   },
 
   charts: [
     {
-      title: 'Strategy Comparison: Net Proceeds',
+      title: 'Total Interest Paid Comparison',
       type: 'bar',
       height: 350,
-      xKey: 'strategy',
+      xKey: 'schedule',
       format: 'currency',
       showLegend: false,
       data: (results) => [
         { 
-          strategy: 'NUA Strategy', 
-          value: results.nuaNetProceeds,
-          color: '#378CE7'
-        },
-        { 
-          strategy: 'IRA Rollover', 
-          value: results.iraNetProceeds,
-          color: '#245383'
-        },
-      ],
-      bars: [
-        { key: 'value', name: 'Net Proceeds', color: '#378CE7' }
-      ],
-      description: 'Future value comparison of net proceeds after all taxes'
-    },
-    {
-      title: 'Total Tax Comparison',
-      type: 'bar',
-      height: 350,
-      xKey: 'strategy',
-      format: 'currency',
-      showLegend: false,
-      data: (results) => [
-        { 
-          strategy: 'NUA Strategy', 
-          value: results.nuaTotalTax,
-          color: '#F87171'
-        },
-        { 
-          strategy: 'IRA Rollover', 
-          value: results.iraTotalTaxWithPenalty,
+          schedule: 'Monthly Schedule', 
+          value: results.monthlyInterestPaid,
           color: '#DC2626'
         },
+        { 
+          schedule: 'Biweekly Schedule', 
+          value: results.biweeklyInterestPaid,
+          color: '#16A34A'
+        },
       ],
       bars: [
-        { key: 'value', name: 'Total Tax', color: '#F87171' }
+        { key: 'value', name: 'Total Interest', color: '#DC2626' }
       ],
-      description: 'Total tax liability for each strategy'
+      description: 'Total interest paid over the life of the loan'
     },
     {
-      title: 'Present Value Comparison',
+      title: 'Remaining Payments',
       type: 'bar',
       height: 350,
-      xKey: 'strategy',
+      xKey: 'schedule',
+      format: 'number',
+      showLegend: false,
+      data: (results) => [
+        { 
+          schedule: 'Monthly', 
+          value: results.remainingMonthlyPayments,
+          color: '#3B82F6'
+        },
+        { 
+          schedule: 'Biweekly', 
+          value: results.remainingBiweeklyPayments,
+          color: '#8B5CF6'
+        },
+      ],
+      bars: [
+        { key: 'value', name: 'Number of Payments', color: '#3B82F6' }
+      ],
+      description: 'Number of remaining payments for each schedule'
+    },
+    {
+      title: 'Your Savings with Biweekly Payments',
+      type: 'bar',
+      height: 350,
+      xKey: 'metric',
       format: 'currency',
       showLegend: false,
       data: (results) => [
         { 
-          strategy: 'NUA Strategy', 
-          value: results.pvNuaNetProceeds,
-          color: '#378CE7'
-        },
-        { 
-          strategy: 'IRA Rollover', 
-          value: results.pvIraNetProceeds,
-          color: '#245383'
+          metric: 'Interest Savings', 
+          value: results.interestSavings,
+          color: '#16A34A'
         },
       ],
       bars: [
-        { key: 'value', name: 'Present Value Net Proceeds', color: '#378CE7' }
+        { key: 'value', name: 'Savings', color: '#16A34A' }
       ],
-      description: `Net proceeds adjusted for ${defaults.inflationRate}% inflation rate`
+      description: 'Total savings from switching to biweekly payments'
     },
   ]
 };
+
+// Helper function for formatting (used in notes)
+function formatCurrency(value) {
+  return new Intl.NumberFormat('en-US', { 
+    style: 'currency', 
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+}
