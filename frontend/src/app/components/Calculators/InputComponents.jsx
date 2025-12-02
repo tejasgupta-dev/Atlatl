@@ -166,7 +166,11 @@ export const PercentageInput = ({ value, onChange, onBlur, placeholder, step, di
         }
     };
 
-    const displayValue = (value === 0 || value === null || value === undefined || isNaN(value)) ? '' : value;
+    const displayValue =
+    value === null || value === undefined || isNaN(value)
+        ? ''
+        : value;
+
 
     return (
         <div className="relative">
