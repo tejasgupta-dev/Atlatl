@@ -1,6 +1,18 @@
 export default function CtaSection() {
   return (
-    <div className="py-16 md:py-24 relative bg-darker-light-blue">
+    <div className="py-16 md:py-24 relative bg-white">
+      <img
+        src="/images/vector_60.svg"
+        alt=""
+        className="absolute top-1/2 left-[25%] -translate-x-1/2 -translate-y-1/2 w-full h-[80%] md:h-[100%]"
+      />
+
+      {/* VECTOR 61: Corner Accent (Kept the same) */}
+      <img
+        src="/images/vector_61.svg"
+        alt=""
+        className="absolute bottom-0 left-[30%] w-[150px] md:w-[25vw] lg:w-[300px]"
+      />
       <div className="container mx-auto px-10 relative z-10 flex flex-col items-center font-songer">
         {/* z-10 ensures text is above the arrow */}
         <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-dark-blue leading-tight mb-4 text-center text-balance">
@@ -18,13 +30,13 @@ export default function CtaSection() {
 
       {/* Arrow Image - Positioned absolutely in the bottom left */}
       {/* Adjust bottom and left values to fine-tune its position based on your exact image dimensions */}
-      <img
+      {/* <img
         src="/images/logo_blue.svg"
         alt="Logo"
         className="absolute bottom-0 left-0 w-[150px] md:w-[25vw] lg:w-[300px] h-auto"
         width={300}
         height={300}
-      />
+      /> */}
     </div>
   );
 }
