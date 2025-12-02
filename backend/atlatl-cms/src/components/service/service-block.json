@@ -1,0 +1,23 @@
+{
+  "collectionName": "components_service_service_blocks",
+  "info": {
+    "displayName": "Service Block",
+    "icon": "briefcase"
+  },
+  "options": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "unique": false
+    },
+    "keywords": {
+      "type": "component",
+      "component": "service.service-text-pair",
+      "repeatable": true,
+      "required": true,
+      "max": 3
+    }
+  },
+  "config": {}
+}

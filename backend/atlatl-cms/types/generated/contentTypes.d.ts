@@ -459,6 +459,34 @@ export interface ApiHomepageHomepage extends Struct.SingleTypeSchema {
   };
 }
 
+export interface ApiServicepageServicepage extends Struct.SingleTypeSchema {
+  collectionName: 'servicepages';
+  info: {
+    displayName: 'servicepage';
+    pluralName: 'servicepages';
+    singularName: 'servicepage';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::servicepage.servicepage'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    serviceblock: Schema.Attribute.Component<'service.service-block', true>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiTeamMemberTeamMember extends Struct.CollectionTypeSchema {
   collectionName: 'team_members';
   info: {
@@ -1009,6 +1037,7 @@ declare module '@strapi/strapi' {
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
       'api::homepage.homepage': ApiHomepageHomepage;
+      'api::servicepage.servicepage': ApiServicepageServicepage;
       'api::team-member.team-member': ApiTeamMemberTeamMember;
       'plugin::content-releases.release': PluginContentReleasesRelease;
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;
