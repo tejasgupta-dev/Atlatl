@@ -4,242 +4,199 @@ import { inputs } from './inputs';
 import { results } from './results';
 
 export const config = {
-  title: 'Company Stock Distribution Analysis Calculator',
-  description: 'Compare NUA (Net Unrealized Appreciation) strategy versus IRA rollover for company stock distributions from your retirement plan',
+  title: 'ARM vs Fixed-Rate Mortgage Calculator',
+  description: 'Compare an adjustable-rate mortgage (ARM) to a fixed-rate mortgage',
   schema,
   defaultValues: defaults,
   inputs,
   results,
 
   calculate: (data) => {
-    /*
-    Dinkytown-style implementation:
-     - NUA = FMV at distribution - cost basis
-     - At distribution (NUA strategy): pay ordinary income tax on cost basis now (and 10% penalty on cost basis if not qualified)
-     - NUA portion is taxed as long-term capital gain when sold (even if sold immediately)
-     - Appreciation AFTER distribution: taxed as short-term (ordinary) if sold within 1 year, otherwise long-term capital gain
-     - IRA rollover: entire amount taxed as ordinary income when withdrawn (plus 10% penalty if applicable)
-     - Present value calculations: discount FUTURE taxes to present using inflationRate
-    */
+    // Inputs
+    const principal = Number(data.mortgageAmount) || 0;
+    const termYears = Number(data.termInYears) || 30;
+    const totalMonths = termYears * 12;
+    
+    const fixedRate = Number(data.fixedInterestRate) / 100 / 12; // monthly rate
+    const armInitialRate = Number(data.armInterestRate) / 100 / 12; // monthly rate
+    const monthsFixed = Number(data.monthsRateFixed) || 60;
+    const expectedAdjustment = Number(data.expectedAdjustment) / 100; // annual adjustment
+    const monthsBetweenAdj = Number(data.monthsBetweenAdjustments) || 12;
+    const rateCap = Number(data.interestRateCap) / 100 / 12; // monthly cap
 
-    const nua = data.balanceAtDistribution - data.costBasis;
+    // Helper function: Calculate monthly payment
+    const calculatePayment = (principal, rate, months) => {
+      if (rate === 0) return principal / months;
+      return principal * (rate * Math.pow(1 + rate, months)) / (Math.pow(1 + rate, months) - 1);
+    };
 
-    // Convert holding period to decimal years
-    const holdingYears = data.holdingPeriodYears + (data.holdingPeriodMonths || 0) / 12;
+    // Helper function: Calculate remaining balance after n payments
+    const calculateBalance = (principal, rate, payment, months) => {
+      let balance = principal;
+      for (let i = 0; i < months; i++) {
+        const interest = balance * rate;
+        const principalPaid = payment - interest;
+        balance -= principalPaid;
+      }
+      return Math.max(0, balance);
+    };
 
-    // Future FMV after holding period (applies equally for both strategies)
-    const fmvAtSale = data.balanceAtDistribution * Math.pow(1 + data.rateOfReturn / 100, holdingYears);
+    // FIXED-RATE MORTGAGE
+    const fixedMonthlyPayment = calculatePayment(principal, fixedRate, totalMonths);
+    let fixedTotalInterest = (fixedMonthlyPayment * totalMonths) - principal;
 
-    // Appreciation that occurs AFTER the distribution event
-    const appreciationAfterDistribution = fmvAtSale - data.balanceAtDistribution;
+    // ARM MORTGAGE - Simulate month by month
+    let armBalance = principal;
+    let armTotalInterest = 0;
+    let currentArmRate = armInitialRate;
+    let armMonthlyPayment = calculatePayment(armBalance, currentArmRate, totalMonths);
+    const armInitialMonthlyPayment = armMonthlyPayment;
+    let monthsUntilAdjustment = monthsFixed;
+    let maxPayment = armMonthlyPayment;
 
-    // Penalty conditions:
-    // For cost-basis taxation at distribution (NUA initial tax), penalty applies unless separatedAtAge55 OR distribution is at/after 59.5
-    const penaltyOnRetirementDist = !(data.separatedAtAge55 || data.retirementDistributionAfter59Half);
-    // For IRA distributions (rolled-over funds), penalty applies if IRA distribution occurs before 59.5
-    const penaltyOnIraDist = !data.iraDistributionAfter59Half;
+    const monthlySeries = [];
 
-    // ===== NUA STRATEGY =====
-    // Initial tax at distribution: cost basis taxed at ordinary marginal tax rate now
-    const nuaInitialTax = data.costBasis * (data.marginalTaxRate / 100);
-    const nuaInitialPenalty = penaltyOnRetirementDist ? data.costBasis * 0.10 : 0;
-    const nuaTotalInitialTax = nuaInitialTax + nuaInitialPenalty;
+    for (let month = 1; month <= totalMonths && armBalance > 0.01; month++) {
+      // Check if we need to adjust the rate
+      if (month > monthsFixed && monthsUntilAdjustment === 0) {
+        // Adjust the rate
+        const annualAdjustment = expectedAdjustment * (monthsBetweenAdj / 12);
+        currentArmRate = Math.min(currentArmRate + (annualAdjustment / 12), rateCap);
+        
+        // Recalculate payment with new rate for remaining months
+        const remainingMonths = totalMonths - month + 1;
+        armMonthlyPayment = calculatePayment(armBalance, currentArmRate, remainingMonths);
+        maxPayment = Math.max(maxPayment, armMonthlyPayment);
+        
+        // Reset counter
+        monthsUntilAdjustment = monthsBetweenAdj;
+      }
 
-    // Future taxes when stock is sold:
-    // - NUA portion taxed at long-term capital gains rate (per Dinkytown: treated as long-term cap gain even if sold immediately)
-    const nuaPortionTaxAtSale = Math.max(0, nua) * (data.capitalGainsRate / 100);
+      // Make payment
+      const interest = armBalance * currentArmRate;
+      const principalPaid = Math.min(armMonthlyPayment - interest, armBalance);
+      
+      armTotalInterest += interest;
+      armBalance -= principalPaid;
 
-    // - Appreciation after distribution taxed as:
-    //     * ordinary income (marginal tax rate) if holding < 1 year
-    //     * long-term capital gains if holding >= 1 year
-    const appreciationTaxRate = holdingYears >= 1 ? (data.capitalGainsRate / 100) : (data.marginalTaxRate / 100);
-    const appreciationTaxAtSale = Math.max(0, appreciationAfterDistribution) * appreciationTaxRate;
+      monthsUntilAdjustment--;
 
-    const nuaTotalFutureTax = nuaPortionTaxAtSale + appreciationTaxAtSale;
+      // Track for chart (every 12 months)
+      if (month % 12 === 0) {
+        const year = month / 12;
+        const fixedBalance = calculateBalance(principal, fixedRate, fixedMonthlyPayment, month);
+        
+        monthlySeries.push({
+          year,
+          fixedBalance: Math.round(fixedBalance),
+          armBalance: Math.round(armBalance),
+          fixedPayment: Math.round(fixedMonthlyPayment),
+          armPayment: Math.round(armMonthlyPayment),
+          armRate: currentArmRate * 12 * 100, // convert to annual %
+        });
+      }
+    }
 
-    // Total taxes (initial + future)
-    const nuaTotalTax = nuaTotalInitialTax + nuaTotalFutureTax;
+    // Calculate ARM at rate cap for max payment
+    const armMaxMonthlyPayment = calculatePayment(principal, rateCap, totalMonths);
 
-    // Net proceeds at sale (future value basis): FMV at sale minus ALL taxes paid (initial taxes were paid now, but for "future value" comparison we subtract all taxes)
-    const nuaNetProceeds = fmvAtSale - nuaTotalFutureTax - nuaTotalInitialTax; // taxes already removed
-
-    // Present value calculations:
-    // Discount only FUTURE taxes to present using inflationRate (per Dinkytown: discount future tax distributions).
-    const discountRate = data.inflationRate / 100;
-    const pvNuaFutureTax = nuaTotalFutureTax / Math.pow(1 + discountRate, holdingYears);
-    const pvNuaTotalTax = nuaTotalInitialTax + pvNuaFutureTax; // initial tax is "now" (no discount)
-    const pvNuaNetProceeds = data.balanceAtDistribution - pvNuaTotalTax;
-
-    // ===== IRA ROLLOVER STRATEGY =====
-    // If rolled over to IRA, the whole balance grows and when withdrawn later it's taxed as ordinary income (marginal)
-    const iraFmvAtSale = fmvAtSale;
-    const iraTotalTaxAtSale = iraFmvAtSale * (data.marginalTaxRate / 100);
-    const iraPenaltyAtSale = penaltyOnIraDist ? iraFmvAtSale * 0.10 : 0;
-    const iraTotalTaxWithPenalty = iraTotalTaxAtSale + iraPenaltyAtSale;
-
-    const iraNetProceeds = iraFmvAtSale - iraTotalTaxWithPenalty;
-
-    // Present value for IRA: discount future tax (all taxed at withdrawal) to present
-    const pvIraTax = iraTotalTaxWithPenalty / Math.pow(1 + discountRate, holdingYears);
-    const pvIraNetProceeds = data.balanceAtDistribution - pvIraTax;
-
-    // ===== Comparison & summary metrics =====
-    const advantage = nuaNetProceeds - iraNetProceeds;
-    const advantagePercent = iraNetProceeds !== 0 ? (advantage / Math.abs(iraNetProceeds)) * 100 : 0;
-
-    const pvAdvantage = pvNuaNetProceeds - pvIraNetProceeds;
-    const pvAdvantagePercent = pvIraNetProceeds !== 0 ? (pvAdvantage / Math.abs(pvIraNetProceeds)) * 100 : 0;
-
-    // Recommendation: compare present-value advantage (gives 'today' basis)
-    const betterStrategy = pvAdvantage > 0 ? 'NUA Strategy' : 'IRA Rollover';
+    // Comparison
+    const initialSavings = fixedMonthlyPayment - armInitialMonthlyPayment;
+    const totalInterestDifference = armTotalInterest - fixedTotalInterest;
+    const betterChoice = totalInterestDifference < 0 ? "ARM" : "Fixed-Rate";
+    const armFinalRate = currentArmRate * 12 * 100; // convert to annual %
 
     return {
-      // Basic metrics
-      nua,
-      fmvAtSale,
-      appreciationAfterDistribution,
-
-      // NUA Strategy breakdown
-      nuaInitialTax,
-      nuaInitialPenalty,
-      nuaTotalInitialTax,
-      nuaPortionTaxAtSale,
-      appreciationTaxAtSale,
-      nuaTotalFutureTax,
-      nuaTotalTax,
-      nuaNetProceeds,
-      pvNuaFutureTax,
-      pvNuaTotalTax,
-      pvNuaNetProceeds,
-
-      // IRA Rollover breakdown
-      iraTotalTaxAtSale,
-      iraPenaltyAtSale,
-      iraTotalTaxWithPenalty,
-      iraNetProceeds,
-      pvIraTax,
-      pvIraNetProceeds,
-
-      // Comparison
-      advantage,
-      advantagePercent,
-      pvAdvantage,
-      pvAdvantagePercent,
-      betterStrategy,
-
-      // Detailed breakdown for display
-      breakdown: [
-        { label: 'NUA Amount', value: nua, format: 'currency' },
-        { label: 'Cost Basis', value: data.costBasis, format: 'currency' },
-        { label: 'Initial Distribution FMV', value: data.balanceAtDistribution, format: 'currency' },
-        { label: 'Projected FMV at Sale', value: fmvAtSale, format: 'currency' },
-        { label: 'Post-Distribution Appreciation', value: appreciationAfterDistribution, format: 'currency' },
-      ],
-
-      nuaBreakdown: [
-        { label: 'Tax on Cost Basis (Ordinary Income)', value: nuaInitialTax, format: 'currency' },
-        { label: 'Penalty on Cost Basis (if applicable)', value: nuaInitialPenalty, format: 'currency' },
-        { label: 'Total Initial Tax', value: nuaTotalInitialTax, format: 'currency' },
-        { label: 'Tax on NUA (Capital Gains)', value: nuaPortionTaxAtSale, format: 'currency' },
-        { label: 'Tax on Appreciation (At Sale)', value: appreciationTaxAtSale, format: 'currency' },
-        { label: 'Total Future Tax', value: nuaTotalFutureTax, format: 'currency' },
-        { label: 'Total Tax (All)', value: nuaTotalTax, format: 'currency' },
-        { label: 'Net Proceeds (Future Value)', value: nuaNetProceeds, format: 'currency' },
-      ],
-
-      iraBreakdown: [
-        { label: 'Tax on Full Amount (Ordinary Income)', value: iraTotalTaxAtSale, format: 'currency' },
-        { label: 'Early Withdrawal Penalty (if applicable)', value: iraPenaltyAtSale, format: 'currency' },
-        { label: 'Total Tax', value: iraTotalTaxWithPenalty, format: 'currency' },
-        { label: 'Net Proceeds (Future Value)', value: iraNetProceeds, format: 'currency' },
-      ],
-
-      // Notes (human friendly)
-      notes: [
-        `Holding period: ${data.holdingPeriodYears} years and ${data.holdingPeriodMonths} months`,
-        penaltyOnRetirementDist ? 'Early withdrawal penalty (10%) applied to NUA initial distribution (cost basis)' : 'No early withdrawal penalty on NUA initial distribution',
-        penaltyOnIraDist ? 'Early withdrawal penalty (10%) will apply to IRA distribution' : 'No early withdrawal penalty on IRA distribution',
-        `NUA portion is treated as long-term capital gain (taxed at ${data.capitalGainsRate}%).`,
-        holdingYears < 1
-          ? 'Appreciation after distribution will be taxed as ordinary income (short-term) because holding period is under 1 year.'
-          : 'Appreciation after distribution will be taxed as long-term capital gain because holding period is at least 1 year.',
-        `The ${betterStrategy} provides ${Math.abs(pvAdvantagePercent).toFixed(2)}% ${pvAdvantage > 0 ? 'more' : 'less'} net proceeds on a present-value basis.`,
-      ],
+      fixedMonthlyPayment,
+      armInitialMonthlyPayment,
+      initialSavings,
+      fixedTotalInterest,
+      armTotalInterest,
+      totalInterestDifference,
+      armFinalRate,
+      armMaxMonthlyPayment,
+      betterChoice,
+      monthlySeries,
     };
   },
 
   charts: [
     {
-      title: 'Strategy Comparison: Net Proceeds',
+      title: 'Monthly Payment Comparison',
       type: 'bar',
       height: 350,
-      xKey: 'strategy',
+      xKey: 'type',
       format: 'currency',
       showLegend: false,
       data: (results) => [
-        { 
-          strategy: 'NUA Strategy', 
-          value: results.nuaNetProceeds,
-          color: '#378CE7'
+        {
+          type: 'Fixed-Rate (constant)',
+          value: results.fixedMonthlyPayment || 0,
+          color: '#3B82F6',
         },
-        { 
-          strategy: 'IRA Rollover', 
-          value: results.iraNetProceeds,
-          color: '#245383'
+        {
+          type: 'ARM (initial)',
+          value: results.armInitialMonthlyPayment || 0,
+          color: '#10B981',
+        },
+        {
+          type: 'ARM (max possible)',
+          value: results.armMaxMonthlyPayment || 0,
+          color: '#EF4444',
         },
       ],
-      bars: [
-        { key: 'value', name: 'Net Proceeds', color: '#378CE7' }
-      ],
-      description: 'Future value comparison of net proceeds after all taxes'
+      bars: [{ key: 'value', name: 'Monthly Payment', fill: 'color' }],
+      description: 'Compare initial and potential maximum monthly payments',
     },
     {
-      title: 'Total Tax Comparison',
+      title: 'Total Interest Paid',
       type: 'bar',
       height: 350,
-      xKey: 'strategy',
+      xKey: 'type',
       format: 'currency',
       showLegend: false,
       data: (results) => [
-        { 
-          strategy: 'NUA Strategy', 
-          value: results.nuaTotalTax,
-          color: '#F87171'
+        {
+          type: 'Fixed-Rate',
+          value: results.fixedTotalInterest || 0,
+          color: '#3B82F6',
         },
-        { 
-          strategy: 'IRA Rollover', 
-          value: results.iraTotalTaxWithPenalty,
-          color: '#DC2626'
+        {
+          type: 'ARM',
+          value: results.armTotalInterest || 0,
+          color: '#10B981',
         },
       ],
-      bars: [
-        { key: 'value', name: 'Total Tax', color: '#F87171' }
-      ],
-      description: 'Total tax liability for each strategy'
+      bars: [{ key: 'value', name: 'Total Interest', fill: 'color' }],
+      description: 'Total interest paid over the life of each loan',
     },
     {
-      title: 'Present Value Comparison',
-      type: 'bar',
-      height: 350,
-      xKey: 'strategy',
+      title: 'Loan Balance Over Time',
+      type: 'line',
+      height: 400,
+      xKey: 'year',
       format: 'currency',
-      showLegend: false,
-      data: (results) => [
-        { 
-          strategy: 'NUA Strategy', 
-          value: results.pvNuaNetProceeds,
-          color: '#378CE7'
-        },
-        { 
-          strategy: 'IRA Rollover', 
-          value: results.pvIraNetProceeds,
-          color: '#245383'
-        },
+      showLegend: true,
+      data: (results) => results.monthlySeries || [],
+      lines: [
+        { key: 'fixedBalance', name: 'Fixed-Rate Balance', stroke: '#3B82F6' },
+        { key: 'armBalance', name: 'ARM Balance', stroke: '#10B981' },
       ],
-      bars: [
-        { key: 'value', name: 'Present Value Net Proceeds', color: '#378CE7' }
-      ],
-      description: `Net proceeds adjusted for ${defaults.inflationRate}% inflation rate`
+      description: 'How the remaining balance decreases over time',
     },
-  ]
+    {
+      title: 'Monthly Payment Over Time',
+      type: 'line',
+      height: 400,
+      xKey: 'year',
+      format: 'currency',
+      showLegend: true,
+      data: (results) => results.monthlySeries || [],
+      lines: [
+        { key: 'fixedPayment', name: 'Fixed-Rate Payment', stroke: '#3B82F6' },
+        { key: 'armPayment', name: 'ARM Payment', stroke: '#10B981' },
+      ],
+      description: 'How monthly payments change over the loan term',
+    },
+  ],
 };

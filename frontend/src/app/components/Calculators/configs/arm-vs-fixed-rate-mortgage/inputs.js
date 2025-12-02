@@ -1,100 +1,67 @@
 export const inputs = [
-  { 
-    name: 'balanceAtDistribution', 
-    label: 'Balance at Time of Distribution (FMV)', 
+  {
+    name: 'mortgageAmount',
+    label: 'Mortgage amount',
     type: 'number',
     format: 'currency',
-    required: true, 
-    hint: 'Fair market value of company stock to be distributed' 
+    required: true,
+    hint: 'Original or expected balance for your mortgage'
   },
-  { 
-    name: 'costBasis', 
-    label: 'Total Stock Purchases (Cost Basis)', 
-    type: 'number',
-    format: 'currency',
-    required: true, 
-    hint: 'Total amount paid for the stock (you and/or employer contributions)' 
-  },
-  { 
-    name: 'rateOfReturn', 
-    label: 'Rate of Return', 
-    type: 'number',
-    format: 'percentage',
-    step: 0.1, 
-    hint: 'Expected annual return on company stock' 
-  },
-  { 
-    name: 'holdingPeriodYears', 
-    label: 'Holding Period (Years)', 
+  {
+    name: 'termInYears',
+    label: 'Term in years',
     type: 'number',
     required: true,
-    hint: 'Years you expect to hold the stock after distribution' 
+    hint: 'Number of years to repay the loan (common terms: 15, 20, 30 years)'
   },
-  { 
-    name: 'holdingPeriodMonths', 
-    label: 'Holding Period (Additional Months)', 
-    type: 'number',
-    hint: 'Additional months beyond full years (0-11)' 
-  },
-  { 
-    name: 'capitalGainsRate', 
-    label: 'Capital Gains Tax Rate', 
+  {
+    name: 'fixedInterestRate',
+    label: 'Fixed-rate interest rate',
     type: 'number',
     format: 'percentage',
-    step: 0.1, 
-    hint: 'Long-term capital gains tax rate (typically 0%, 15%, or 20%)' 
+    step: 0.01,
+    required: true,
+    hint: 'Annual interest rate for the fixed-rate mortgage'
   },
-  { 
-    name: 'marginalTaxRate', 
-    label: 'Marginal Income Tax Rate', 
+  {
+    name: 'armInterestRate',
+    label: 'ARM initial interest rate',
     type: 'number',
     format: 'percentage',
-    step: 0.1, 
-    hint: 'Your ordinary income tax rate' 
+    step: 0.01,
+    required: true,
+    hint: 'Initial interest rate for the ARM (typically lower than fixed-rate)'
   },
-  { 
-    name: 'inflationRate', 
-    label: 'Expected Inflation Rate', 
+  {
+    name: 'monthsRateFixed',
+    label: 'Months rate fixed',
+    type: 'number',
+    required: true,
+    hint: 'Number of months the ARM rate remains fixed before adjusting'
+  },
+  {
+    name: 'expectedAdjustment',
+    label: 'Expected adjustment',
     type: 'number',
     format: 'percentage',
     step: 0.1,
-    hint: 'Long-term average inflation rate for present value calculations' 
+    required: true,
+    hint: 'Expected annual rate change after fixed period (-3% to +3%)'
   },
-  { 
-    name: 'currentAge', 
-    label: 'Current Age', 
+  {
+    name: 'monthsBetweenAdjustments',
+    label: 'Months between adjustments',
     type: 'number',
     required: true,
-    hint: 'Your current age' 
+    hint: 'Number of months between rate adjustments (12 = annual, 6 = semi-annual)'
   },
-  { 
-    name: 'separatedAtAge55', 
-    label: 'Separated from Service at Age 55 or Older', 
-    type: 'select',
-    options: [
-      { value: false, label: 'No' },
-      { value: true, label: 'Yes' }
-    ],
-    hint: 'Check if you separated in/after the year you turned 55 (no 10% penalty)' 
-  },
-  { 
-    name: 'retirementDistributionAfter59Half', 
-    label: 'Retirement Plan Distribution at Age 59½ or Older', 
-    type: 'select',
-    options: [
-      { value: false, label: 'No' },
-      { value: true, label: 'Yes' }
-    ],
-    hint: 'Check if distribution occurs at/after age 59½ (no 10% penalty)' 
-  },
-  { 
-    name: 'iraDistributionAfter59Half', 
-    label: 'IRA Distribution at Age 59½ or Older', 
-    type: 'select',
-    options: [
-      { value: false, label: 'No' },
-      { value: true, label: 'Yes' }
-    ],
-    hint: 'Check if IRA distribution occurs at/after age 59½ (no 10% penalty)' 
+  {
+    name: 'interestRateCap',
+    label: 'Interest rate cap',
+    type: 'number',
+    format: 'percentage',
+    step: 0.1,
+    required: true,
+    hint: 'Maximum allowable interest rate for the ARM'
   },
 ];
