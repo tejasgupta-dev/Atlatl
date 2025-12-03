@@ -1,34 +1,62 @@
 export const results = [
   { 
-    key: 'nua', 
-    label: 'Net Unrealized Appreciation (NUA)', 
-    format: 'currency'
+    key: 'exchangeQualifies', 
+    label: 'Exchange Status', 
+    format: 'text',
+    description: 'Whether the exchange qualifies for full tax deferral'
   },
   { 
-    key: 'betterStrategy', 
-    label: 'Recommended Strategy', 
-    format: 'text'
+    key: 'daysToComplete', 
+    label: 'Days Between Sale and Purchase', 
+    format: 'number',
+    description: 'Must be ≤180 days to qualify'
   },
   { 
-    key: 'advantage', 
-    label: 'NUA Strategy Advantage (Future Value)', 
+    key: 'netSale', 
+    label: 'Net Sale for Property Sold', 
     format: 'currency',
-    description: 'How much more you would have with NUA vs IRA rollover'
+    description: 'Sales price minus sales costs and fees'
   },
   { 
-    key: 'advantagePercent', 
-    label: 'Advantage %', 
-    format: 'percentage'
-  },
-  { 
-    key: 'pvAdvantage', 
-    label: 'NUA Strategy Advantage (Present Value)', 
+    key: 'netCashReceived', 
+    label: 'Net Cash Received', 
     format: 'currency',
-    description: 'Advantage adjusted for inflation'
+    description: 'Cash available for reinvestment (must all be reinvested to avoid tax)'
   },
   { 
-    key: 'pvAdvantagePercent', 
-    label: 'Advantage % (PV)', 
-    format: 'percentage'
+    key: 'netCostPurchased', 
+    label: 'Net Cost for Property Purchased', 
+    format: 'currency',
+    description: 'Purchase price plus purchase costs'
+  },
+  { 
+    key: 'netCashReinvested', 
+    label: 'Net Cash Reinvested', 
+    format: 'currency',
+    description: 'Cash reinvested in replacement property'
+  },
+  { 
+    key: 'totalGain', 
+    label: 'Total Gain on Sale', 
+    format: 'currency',
+    description: 'Total gain if no 1031 exchange (Net Sale - Adjusted Basis)'
+  },
+  { 
+    key: 'recognizedGain', 
+    label: 'Recognized Gain (Boot)', 
+    format: 'currency',
+    description: 'Taxable gain due to trading down or taking cash out'
+  },
+  { 
+    key: 'deferredGain', 
+    label: 'Deferred Gain', 
+    format: 'currency',
+    description: 'Capital gains deferred through the 1031 exchange'
+  },
+  { 
+    key: 'newBasis', 
+    label: 'Basis of Replacement Property', 
+    format: 'currency',
+    description: 'New adjusted basis for replacement property'
   },
 ];

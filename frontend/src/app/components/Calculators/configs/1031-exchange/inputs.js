@@ -1,100 +1,87 @@
 export const inputs = [
+  // Dates and Description
   { 
-    name: 'balanceAtDistribution', 
-    label: 'Balance at Time of Distribution (FMV)', 
+    name: 'dateOfSale', 
+    label: 'Date of Sale', 
+    type: 'date',
+    section: 'Exchange Timeline',
+    hint: 'Date the investment real estate will be sold' 
+  },
+  { 
+    name: 'dateOfPurchase', 
+    label: 'Date of Purchase', 
+    type: 'date',
+    section: 'Exchange Timeline',
+    hint: 'Exchange must be completed within 180 days from date of sale' 
+  },
+  { 
+    name: 'description', 
+    label: 'Description of Property (Optional)', 
+    type: 'text',
+    section: 'Exchange Timeline',
+    hint: 'Brief description of the property involved in this exchange' 
+  },
+
+  // Property Being Sold
+  { 
+    name: 'adjustedBasis', 
+    label: 'Adjusted Cost Basis', 
     type: 'number',
     format: 'currency',
-    required: true, 
-    hint: 'Fair market value of company stock to be distributed' 
+    required: true,
+    section: 'Property Being Sold',
+    hint: 'The adjusted basis of investment real estate being sold' 
   },
   { 
-    name: 'costBasis', 
-    label: 'Total Stock Purchases (Cost Basis)', 
+    name: 'salesPrice', 
+    label: 'Sales Price', 
     type: 'number',
     format: 'currency',
-    required: true, 
-    hint: 'Total amount paid for the stock (you and/or employer contributions)' 
-  },
-  { 
-    name: 'rateOfReturn', 
-    label: 'Rate of Return', 
-    type: 'number',
-    format: 'percentage',
-    step: 0.1, 
-    hint: 'Expected annual return on company stock' 
-  },
-  { 
-    name: 'holdingPeriodYears', 
-    label: 'Holding Period (Years)', 
-    type: 'number',
     required: true,
-    hint: 'Years you expect to hold the stock after distribution' 
+    section: 'Property Being Sold',
+    hint: 'Contracted sales price of the investment property sold' 
   },
   { 
-    name: 'holdingPeriodMonths', 
-    label: 'Holding Period (Additional Months)', 
+    name: 'salesCosts', 
+    label: 'Sales Cost, Commissions and Exchange Fee', 
     type: 'number',
-    hint: 'Additional months beyond full years (0-11)' 
+    format: 'currency',
+    section: 'Property Being Sold',
+    hint: 'Commissions, title insurance, closing costs, exchange fee, etc.' 
   },
   { 
-    name: 'capitalGainsRate', 
-    label: 'Capital Gains Tax Rate', 
+    name: 'liabilitiesSold', 
+    label: 'Less Liabilities/Mortgages', 
     type: 'number',
-    format: 'percentage',
-    step: 0.1, 
-    hint: 'Long-term capital gains tax rate (typically 0%, 15%, or 20%)' 
+    format: 'currency',
+    section: 'Property Being Sold',
+    hint: 'Any liabilities or mortgages on the property being sold' 
   },
+
+  // Property Being Purchased
   { 
-    name: 'marginalTaxRate', 
-    label: 'Marginal Income Tax Rate', 
+    name: 'purchasePrice', 
+    label: 'Purchase Price', 
     type: 'number',
-    format: 'percentage',
-    step: 0.1, 
-    hint: 'Your ordinary income tax rate' 
-  },
-  { 
-    name: 'inflationRate', 
-    label: 'Expected Inflation Rate', 
-    type: 'number',
-    format: 'percentage',
-    step: 0.1,
-    hint: 'Long-term average inflation rate for present value calculations' 
-  },
-  { 
-    name: 'currentAge', 
-    label: 'Current Age', 
-    type: 'number',
+    format: 'currency',
     required: true,
-    hint: 'Your current age' 
+    section: 'Replacement Property Being Purchased',
+    hint: 'Contracted purchase price of the replacement investment real estate' 
   },
   { 
-    name: 'separatedAtAge55', 
-    label: 'Separated from Service at Age 55 or Older', 
-    type: 'select',
-    options: [
-      { value: false, label: 'No' },
-      { value: true, label: 'Yes' }
-    ],
-    hint: 'Check if you separated in/after the year you turned 55 (no 10% penalty)' 
+    name: 'purchaseCosts', 
+    label: 'Purchase Costs and Commissions', 
+    type: 'number',
+    format: 'currency',
+    section: 'Replacement Property Being Purchased',
+    hint: 'Commissions, title insurance, closing costs, etc.' 
   },
   { 
-    name: 'retirementDistributionAfter59Half', 
-    label: 'Retirement Plan Distribution at Age 59½ or Older', 
-    type: 'select',
-    options: [
-      { value: false, label: 'No' },
-      { value: true, label: 'Yes' }
-    ],
-    hint: 'Check if distribution occurs at/after age 59½ (no 10% penalty)' 
-  },
-  { 
-    name: 'iraDistributionAfter59Half', 
-    label: 'IRA Distribution at Age 59½ or Older', 
-    type: 'select',
-    options: [
-      { value: false, label: 'No' },
-      { value: true, label: 'Yes' }
-    ],
-    hint: 'Check if IRA distribution occurs at/after age 59½ (no 10% penalty)' 
+    name: 'liabilitiesPurchased', 
+    label: 'Plus Liabilities/Mortgages', 
+    type: 'number',
+    format: 'currency',
+    section: 'Replacement Property Being Purchased',
+    hint: 'Any liabilities or mortgages on the replacement property' 
   },
 ];

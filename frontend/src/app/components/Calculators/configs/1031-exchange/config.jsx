@@ -4,242 +4,229 @@ import { inputs } from './inputs';
 import { results } from './results';
 
 export const config = {
-  title: 'Company Stock Distribution Analysis Calculator',
-  description: 'Compare NUA (Net Unrealized Appreciation) strategy versus IRA rollover for company stock distributions from your retirement plan',
+  title: '1031 Exchange Calculator',
+  description: 'Calculate tax deferral benefits and reinvestment requirements for like-kind property exchanges',
   schema,
   defaultValues: defaults,
   inputs,
   results,
 
   calculate: (data) => {
-    /*
-    Dinkytown-style implementation:
-     - NUA = FMV at distribution - cost basis
-     - At distribution (NUA strategy): pay ordinary income tax on cost basis now (and 10% penalty on cost basis if not qualified)
-     - NUA portion is taxed as long-term capital gain when sold (even if sold immediately)
-     - Appreciation AFTER distribution: taxed as short-term (ordinary) if sold within 1 year, otherwise long-term capital gain
-     - IRA rollover: entire amount taxed as ordinary income when withdrawn (plus 10% penalty if applicable)
-     - Present value calculations: discount FUTURE taxes to present using inflationRate
-    */
+    const round2 = (x) => Math.round(x * 100) / 100;
 
-    const nua = data.balanceAtDistribution - data.costBasis;
+    // ===== PROPERTY SOLD (RELINQUISHED) =====
+    const salesPrice = Number(data.salesPrice) || 0;
+    const salesCosts = Number(data.salesCosts) || 0;
+    const liabilitiesSold = Number(data.liabilitiesSold) || 0;
+    const adjustedBasis = Number(data.adjustedBasis) || 0;
+    
+    const netSale = salesPrice - salesCosts;
+    const netCashReceived = netSale - liabilitiesSold;
 
-    // Convert holding period to decimal years
-    const holdingYears = data.holdingPeriodYears + (data.holdingPeriodMonths || 0) / 12;
+    // ===== PROPERTY PURCHASED (REPLACEMENT) =====
+    const purchasePrice = Number(data.purchasePrice) || 0;
+    const purchaseCosts = Number(data.purchaseCosts) || 0;
+    const liabilitiesPurchased = Number(data.liabilitiesPurchased) || 0;
+    
+    const netCostPurchased = purchasePrice + purchaseCosts;
+    const netCashReinvested = netCostPurchased - liabilitiesPurchased;
 
-    // Future FMV after holding period (applies equally for both strategies)
-    const fmvAtSale = data.balanceAtDistribution * Math.pow(1 + data.rateOfReturn / 100, holdingYears);
+    // ===== RECOGNIZED GAIN CALCULATION (BOOT) =====
+    // Per Dinkytown: "any amount purchased less than the net sale OR any amount of cash taken"
+    // Boot is the MAXIMUM of:
+    // 1. Trading down: Net Sale - Net Cost Purchased
+    // 2. Cash boot: Net Cash Received - Net Cash Reinvested
+    
+    const tradingDown = Math.max(0, netSale - netCostPurchased);
+    const cashBoot = Math.max(0, netCashReceived - netCashReinvested);
+    const boot = Math.max(tradingDown, cashBoot);
+    
+    // Total gain on sale (if no 1031 exchange)
+    const totalGain = netSale - adjustedBasis;
+    
+    // Recognized gain (taxable) - limited to actual gain
+    const recognizedGain = Math.min(boot, Math.max(0, totalGain));
+    
+    // Deferred gain
+    const deferredGain = Math.max(0, totalGain - recognizedGain);
 
-    // Appreciation that occurs AFTER the distribution event
-    const appreciationAfterDistribution = fmvAtSale - data.balanceAtDistribution;
+    // ===== NEW BASIS CALCULATION =====
+    // Per Dinkytown: "This is the original adjusted basis plus any amount purchased greater than the net sale"
+    // New Basis = Old Basis + (Net Cost Purchased - Net Sale)
+    // This is equivalent to: Old Basis + Cash Added - Boot Received
+    const newBasis = adjustedBasis + (netCostPurchased - netSale);
 
-    // Penalty conditions:
-    // For cost-basis taxation at distribution (NUA initial tax), penalty applies unless separatedAtAge55 OR distribution is at/after 59.5
-    const penaltyOnRetirementDist = !(data.separatedAtAge55 || data.retirementDistributionAfter59Half);
-    // For IRA distributions (rolled-over funds), penalty applies if IRA distribution occurs before 59.5
-    const penaltyOnIraDist = !data.iraDistributionAfter59Half;
+    // ===== EXCHANGE QUALIFICATION =====
+    let daysToComplete = null;
+    let withinTimeframe = false;
+    
+    if (data.dateOfSale && data.dateOfPurchase && 
+        data.dateOfSale !== '' && data.dateOfPurchase !== '') {
+      const saleDate = new Date(data.dateOfSale);
+      const purchaseDate = new Date(data.dateOfPurchase);
+      daysToComplete = Math.round((purchaseDate - saleDate) / (1000 * 60 * 60 * 24));
+      withinTimeframe = daysToComplete >= 0 && daysToComplete <= 180;
+    }
 
-    // ===== NUA STRATEGY =====
-    // Initial tax at distribution: cost basis taxed at ordinary marginal tax rate now
-    const nuaInitialTax = data.costBasis * (data.marginalTaxRate / 100);
-    const nuaInitialPenalty = penaltyOnRetirementDist ? data.costBasis * 0.10 : 0;
-    const nuaTotalInitialTax = nuaInitialTax + nuaInitialPenalty;
-
-    // Future taxes when stock is sold:
-    // - NUA portion taxed at long-term capital gains rate (per Dinkytown: treated as long-term cap gain even if sold immediately)
-    const nuaPortionTaxAtSale = Math.max(0, nua) * (data.capitalGainsRate / 100);
-
-    // - Appreciation after distribution taxed as:
-    //     * ordinary income (marginal tax rate) if holding < 1 year
-    //     * long-term capital gains if holding >= 1 year
-    const appreciationTaxRate = holdingYears >= 1 ? (data.capitalGainsRate / 100) : (data.marginalTaxRate / 100);
-    const appreciationTaxAtSale = Math.max(0, appreciationAfterDistribution) * appreciationTaxRate;
-
-    const nuaTotalFutureTax = nuaPortionTaxAtSale + appreciationTaxAtSale;
-
-    // Total taxes (initial + future)
-    const nuaTotalTax = nuaTotalInitialTax + nuaTotalFutureTax;
-
-    // Net proceeds at sale (future value basis): FMV at sale minus ALL taxes paid (initial taxes were paid now, but for "future value" comparison we subtract all taxes)
-    const nuaNetProceeds = fmvAtSale - nuaTotalFutureTax - nuaTotalInitialTax; // taxes already removed
-
-    // Present value calculations:
-    // Discount only FUTURE taxes to present using inflationRate (per Dinkytown: discount future tax distributions).
-    const discountRate = data.inflationRate / 100;
-    const pvNuaFutureTax = nuaTotalFutureTax / Math.pow(1 + discountRate, holdingYears);
-    const pvNuaTotalTax = nuaTotalInitialTax + pvNuaFutureTax; // initial tax is "now" (no discount)
-    const pvNuaNetProceeds = data.balanceAtDistribution - pvNuaTotalTax;
-
-    // ===== IRA ROLLOVER STRATEGY =====
-    // If rolled over to IRA, the whole balance grows and when withdrawn later it's taxed as ordinary income (marginal)
-    const iraFmvAtSale = fmvAtSale;
-    const iraTotalTaxAtSale = iraFmvAtSale * (data.marginalTaxRate / 100);
-    const iraPenaltyAtSale = penaltyOnIraDist ? iraFmvAtSale * 0.10 : 0;
-    const iraTotalTaxWithPenalty = iraTotalTaxAtSale + iraPenaltyAtSale;
-
-    const iraNetProceeds = iraFmvAtSale - iraTotalTaxWithPenalty;
-
-    // Present value for IRA: discount future tax (all taxed at withdrawal) to present
-    const pvIraTax = iraTotalTaxWithPenalty / Math.pow(1 + discountRate, holdingYears);
-    const pvIraNetProceeds = data.balanceAtDistribution - pvIraTax;
-
-    // ===== Comparison & summary metrics =====
-    const advantage = nuaNetProceeds - iraNetProceeds;
-    const advantagePercent = iraNetProceeds !== 0 ? (advantage / Math.abs(iraNetProceeds)) * 100 : 0;
-
-    const pvAdvantage = pvNuaNetProceeds - pvIraNetProceeds;
-    const pvAdvantagePercent = pvIraNetProceeds !== 0 ? (pvAdvantage / Math.abs(pvIraNetProceeds)) * 100 : 0;
-
-    // Recommendation: compare present-value advantage (gives 'today' basis)
-    const betterStrategy = pvAdvantage > 0 ? 'NUA Strategy' : 'IRA Rollover';
+    // Qualification status
+    let exchangeQualifies = 'Not Determined';
+    if (daysToComplete !== null) {
+      if (withinTimeframe && boot === 0) {
+        exchangeQualifies = 'Qualifies for Full Deferral';
+      } else if (withinTimeframe && boot > 0) {
+        exchangeQualifies = 'Partial Deferral (Boot Recognized)';
+      } else if (!withinTimeframe) {
+        exchangeQualifies = 'Does Not Qualify (Exceeds 180 Days)';
+      }
+    }
 
     return {
-      // Basic metrics
-      nua,
-      fmvAtSale,
-      appreciationAfterDistribution,
+      // Sale calculations
+      netSale: round2(netSale),
+      netCashReceived: round2(netCashReceived),
+      
+      // Purchase calculations
+      netCostPurchased: round2(netCostPurchased),
+      netCashReinvested: round2(netCashReinvested),
+      
+      // Boot/gain calculations
+      tradingDown: round2(tradingDown),
+      cashBoot: round2(cashBoot),
+      boot: round2(boot),
+      totalGain: round2(totalGain),
+      recognizedGain: round2(recognizedGain),
+      deferredGain: round2(deferredGain),
+      
+      // Basis
+      newBasis: round2(newBasis),
+      
+      // Exchange qualification
+      exchangeQualifies,
+      daysToComplete,
+      withinTimeframe,
 
-      // NUA Strategy breakdown
-      nuaInitialTax,
-      nuaInitialPenalty,
-      nuaTotalInitialTax,
-      nuaPortionTaxAtSale,
-      appreciationTaxAtSale,
-      nuaTotalFutureTax,
-      nuaTotalTax,
-      nuaNetProceeds,
-      pvNuaFutureTax,
-      pvNuaTotalTax,
-      pvNuaNetProceeds,
-
-      // IRA Rollover breakdown
-      iraTotalTaxAtSale,
-      iraPenaltyAtSale,
-      iraTotalTaxWithPenalty,
-      iraNetProceeds,
-      pvIraTax,
-      pvIraNetProceeds,
-
-      // Comparison
-      advantage,
-      advantagePercent,
-      pvAdvantage,
-      pvAdvantagePercent,
-      betterStrategy,
-
-      // Detailed breakdown for display
-      breakdown: [
-        { label: 'NUA Amount', value: nua, format: 'currency' },
-        { label: 'Cost Basis', value: data.costBasis, format: 'currency' },
-        { label: 'Initial Distribution FMV', value: data.balanceAtDistribution, format: 'currency' },
-        { label: 'Projected FMV at Sale', value: fmvAtSale, format: 'currency' },
-        { label: 'Post-Distribution Appreciation', value: appreciationAfterDistribution, format: 'currency' },
+      // Breakdowns for display
+      saleBreakdown: [
+        { label: 'Sales Price', value: round2(salesPrice) },
+        { label: 'Less: Sales Costs, Commissions and Exchange Fee', value: round2(-salesCosts) },
+        { label: 'Net Sale for Property Sold', value: round2(netSale) },
+        { label: 'Less: Liabilities/Mortgages', value: round2(-liabilitiesSold) },
+        { label: 'Net Cash Received', value: round2(netCashReceived) },
       ],
 
-      nuaBreakdown: [
-        { label: 'Tax on Cost Basis (Ordinary Income)', value: nuaInitialTax, format: 'currency' },
-        { label: 'Penalty on Cost Basis (if applicable)', value: nuaInitialPenalty, format: 'currency' },
-        { label: 'Total Initial Tax', value: nuaTotalInitialTax, format: 'currency' },
-        { label: 'Tax on NUA (Capital Gains)', value: nuaPortionTaxAtSale, format: 'currency' },
-        { label: 'Tax on Appreciation (At Sale)', value: appreciationTaxAtSale, format: 'currency' },
-        { label: 'Total Future Tax', value: nuaTotalFutureTax, format: 'currency' },
-        { label: 'Total Tax (All)', value: nuaTotalTax, format: 'currency' },
-        { label: 'Net Proceeds (Future Value)', value: nuaNetProceeds, format: 'currency' },
+      purchaseBreakdown: [
+        { label: 'Purchase Price', value: round2(purchasePrice) },
+        { label: 'Plus: Purchase Costs and Commissions', value: round2(purchaseCosts) },
+        { label: 'Net Cost for Property Purchased', value: round2(netCostPurchased) },
+        { label: 'Less: Liabilities/Mortgages', value: round2(-liabilitiesPurchased) },
+        { label: 'Net Cash Reinvested', value: round2(netCashReinvested) },
       ],
 
-      iraBreakdown: [
-        { label: 'Tax on Full Amount (Ordinary Income)', value: iraTotalTaxAtSale, format: 'currency' },
-        { label: 'Early Withdrawal Penalty (if applicable)', value: iraPenaltyAtSale, format: 'currency' },
-        { label: 'Total Tax', value: iraTotalTaxWithPenalty, format: 'currency' },
-        { label: 'Net Proceeds (Future Value)', value: iraNetProceeds, format: 'currency' },
+      gainBreakdown: [
+        { label: 'Net Sale', value: round2(netSale) },
+        { label: 'Less: Adjusted Cost Basis', value: round2(-adjustedBasis) },
+        { label: 'Total Gain on Sale', value: round2(totalGain) },
+        { label: 'Recognized Gain (Boot)', value: round2(recognizedGain) },
+        { label: 'Deferred Gain', value: round2(deferredGain) },
       ],
 
-      // Notes (human friendly)
       notes: [
-        `Holding period: ${data.holdingPeriodYears} years and ${data.holdingPeriodMonths} months`,
-        penaltyOnRetirementDist ? 'Early withdrawal penalty (10%) applied to NUA initial distribution (cost basis)' : 'No early withdrawal penalty on NUA initial distribution',
-        penaltyOnIraDist ? 'Early withdrawal penalty (10%) will apply to IRA distribution' : 'No early withdrawal penalty on IRA distribution',
-        `NUA portion is treated as long-term capital gain (taxed at ${data.capitalGainsRate}%).`,
-        holdingYears < 1
-          ? 'Appreciation after distribution will be taxed as ordinary income (short-term) because holding period is under 1 year.'
-          : 'Appreciation after distribution will be taxed as long-term capital gain because holding period is at least 1 year.',
-        `The ${betterStrategy} provides ${Math.abs(pvAdvantagePercent).toFixed(2)}% ${pvAdvantage > 0 ? 'more' : 'less'} net proceeds on a present-value basis.`,
-      ],
+        daysToComplete !== null 
+          ? `Exchange timeframe: ${daysToComplete} days (must be ≤180 days)` 
+          : 'Enter sale and purchase dates to validate exchange timeframe',
+        exchangeQualifies,
+        boot === 0 
+          ? 'No boot - all proceeds reinvested for full tax deferral' 
+          : `Boot recognized: $${boot.toLocaleString()} (taxable)`,
+        tradingDown > 0 
+          ? `Trading down: $${tradingDown.toLocaleString()} (purchased less than sold)` 
+          : '',
+        cashBoot > 0 
+          ? `Cash boot: $${cashBoot.toLocaleString()} (cash not reinvested)` 
+          : '',
+        `To avoid all taxes: Purchase ≥ $${netSale.toLocaleString()} AND reinvest all $${netCashReceived.toLocaleString()}`,
+        `New basis in replacement property: $${newBasis.toLocaleString()}`,
+      ].filter(note => note !== ''),
     };
   },
 
   charts: [
     {
-      title: 'Strategy Comparison: Net Proceeds',
+      title: 'Gain Disposition',
       type: 'bar',
       height: 350,
-      xKey: 'strategy',
+      xKey: 'type',
       format: 'currency',
       showLegend: false,
       data: (results) => [
         { 
-          strategy: 'NUA Strategy', 
-          value: results.nuaNetProceeds,
-          color: '#378CE7'
+          type: 'Deferred Gain', 
+          value: results.deferredGain,
+          color: '#10B981'
         },
         { 
-          strategy: 'IRA Rollover', 
-          value: results.iraNetProceeds,
-          color: '#245383'
+          type: 'Recognized Gain (Boot)', 
+          value: results.recognizedGain,
+          color: '#F59E0B'
         },
       ],
       bars: [
-        { key: 'value', name: 'Net Proceeds', color: '#378CE7' }
+        { key: 'value', name: 'Gain Amount', color: '#10B981' }
       ],
-      description: 'Future value comparison of net proceeds after all taxes'
+      description: 'Breakdown of total gain: deferred vs. recognized (taxable)'
     },
     {
-      title: 'Total Tax Comparison',
+      title: 'Cash Flow Analysis',
       type: 'bar',
       height: 350,
-      xKey: 'strategy',
+      xKey: 'item',
       format: 'currency',
       showLegend: false,
       data: (results) => [
         { 
-          strategy: 'NUA Strategy', 
-          value: results.nuaTotalTax,
-          color: '#F87171'
+          item: 'Cash Received from Sale', 
+          value: results.netCashReceived,
+          color: '#3B82F6'
         },
         { 
-          strategy: 'IRA Rollover', 
-          value: results.iraTotalTaxWithPenalty,
-          color: '#DC2626'
+          item: 'Cash Reinvested in Purchase', 
+          value: results.netCashReinvested,
+          color: '#10B981'
+        },
+        { 
+          item: 'Boot (Not Reinvested)', 
+          value: results.boot,
+          color: '#F59E0B'
         },
       ],
       bars: [
-        { key: 'value', name: 'Total Tax', color: '#F87171' }
+        { key: 'value', name: 'Amount', color: '#3B82F6' }
       ],
-      description: 'Total tax liability for each strategy'
+      description: 'Cash flow from sale and reinvestment in replacement property'
     },
     {
-      title: 'Present Value Comparison',
+      title: 'Property Value Comparison',
       type: 'bar',
       height: 350,
-      xKey: 'strategy',
+      xKey: 'property',
       format: 'currency',
       showLegend: false,
       data: (results) => [
         { 
-          strategy: 'NUA Strategy', 
-          value: results.pvNuaNetProceeds,
-          color: '#378CE7'
+          property: 'Property Sold (Net)', 
+          value: results.netSale,
+          color: '#EF4444'
         },
         { 
-          strategy: 'IRA Rollover', 
-          value: results.pvIraNetProceeds,
-          color: '#245383'
+          property: 'Property Purchased (Net)', 
+          value: results.netCostPurchased,
+          color: '#10B981'
         },
       ],
       bars: [
-        { key: 'value', name: 'Present Value Net Proceeds', color: '#378CE7' }
+        { key: 'value', name: 'Net Value', color: '#3B82F6' }
       ],
-      description: `Net proceeds adjusted for ${defaults.inflationRate}% inflation rate`
+      description: 'Comparison of net sale vs. net purchase value'
     },
   ]
 };
