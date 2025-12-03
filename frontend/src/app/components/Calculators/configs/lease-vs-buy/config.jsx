@@ -4,242 +4,248 @@ import { inputs } from './inputs';
 import { results } from './results';
 
 export const config = {
-  title: 'Company Stock Distribution Analysis Calculator',
-  description: 'Compare NUA (Net Unrealized Appreciation) strategy versus IRA rollover for company stock distributions from your retirement plan',
+  title: 'Lease vs Buy Calculator',
+  description: 'Compare the true costs of leasing versus buying a vehicle to make the best financial decision',
   schema,
   defaultValues: defaults,
   inputs,
   results,
 
   calculate: (data) => {
-    /*
-    Dinkytown-style implementation:
-     - NUA = FMV at distribution - cost basis
-     - At distribution (NUA strategy): pay ordinary income tax on cost basis now (and 10% penalty on cost basis if not qualified)
-     - NUA portion is taxed as long-term capital gain when sold (even if sold immediately)
-     - Appreciation AFTER distribution: taxed as short-term (ordinary) if sold within 1 year, otherwise long-term capital gain
-     - IRA rollover: entire amount taxed as ordinary income when withdrawn (plus 10% penalty if applicable)
-     - Present value calculations: discount FUTURE taxes to present using inflationRate
-    */
+    // ===== INPUTS =====
+    const price = Number(data.purchasePrice) || 0;
+    const downPayment = Number(data.downPayment) || 0;
+    const salesTaxRate = (Number(data.salesTaxRate) || 0) / 100;
+    const investReturnRate = (Number(data.investmentReturnRate) || 0) / 100;
+    
+    // BUY OPTION
+    const loanTermMonths = Number(data.loanTermMonths) || 60;
+    const loanApr = (Number(data.loanInterestRate) || 0) / 100;
+    const buyOtherFees = Number(data.buyOtherFees) || 0;
+    const depreciationRate = (Number(data.annualDepreciationRate) || 0) / 100;
+    
+    // LEASE OPTION
+    const leaseTermMonths = Number(data.leaseTermMonths) || 36;
+    const leaseApr = (Number(data.leaseInterestRate) || 0) / 100;
+    const leaseOtherFees = Number(data.leaseOtherFees) || 0;
+    const residualPercent = (Number(data.residualPercent) || 0) / 100;
+    const securityDeposit = Number(data.securityDeposit) || 0;
 
-    const nua = data.balanceAtDistribution - data.costBasis;
+    const comparisonMonths = leaseTermMonths;
+    const years = comparisonMonths / 12;
 
-    // Convert holding period to decimal years
-    const holdingYears = data.holdingPeriodYears + (data.holdingPeriodMonths || 0) / 12;
+    // ===== HELPER FUNCTIONS =====
+    const round2 = (x) => Math.round(x * 100) / 100;
 
-    // Future FMV after holding period (applies equally for both strategies)
-    const fmvAtSale = data.balanceAtDistribution * Math.pow(1 + data.rateOfReturn / 100, holdingYears);
+    function pmt(principal, monthlyRate, n) {
+      if (n <= 0) return 0;
+      if (monthlyRate === 0) return principal / n;
+      return (principal * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -n));
+    }
 
-    // Appreciation that occurs AFTER the distribution event
-    const appreciationAfterDistribution = fmvAtSale - data.balanceAtDistribution;
+    function remainingBalance(principal, monthlyRate, n, k) {
+      if (k >= n) return 0;
+      if (monthlyRate === 0) {
+        return principal * (1 - k / n);
+      }
+      const payment = pmt(principal, monthlyRate, n);
+      return principal * Math.pow(1 + monthlyRate, k) - 
+             payment * ((Math.pow(1 + monthlyRate, k) - 1) / monthlyRate);
+    }
 
-    // Penalty conditions:
-    // For cost-basis taxation at distribution (NUA initial tax), penalty applies unless separatedAtAge55 OR distribution is at/after 59.5
-    const penaltyOnRetirementDist = !(data.separatedAtAge55 || data.retirementDistributionAfter59Half);
-    // For IRA distributions (rolled-over funds), penalty applies if IRA distribution occurs before 59.5
-    const penaltyOnIraDist = !data.iraDistributionAfter59Half;
+    // ===== BUY CALCULATIONS =====
+    // Sales tax applied to full price
+    const salesTax = price * salesTaxRate;
+    const buyLoanAmount = price + salesTax - downPayment;
+    const buyMonthlyRate = loanApr / 12;
+    const buyMonthlyPayment = pmt(buyLoanAmount, buyMonthlyRate, loanTermMonths);
+    
+    const totalLoanPayments = buyMonthlyPayment * Math.min(comparisonMonths, loanTermMonths);
+    const endingLoanBalance = remainingBalance(buyLoanAmount, buyMonthlyRate, loanTermMonths, comparisonMonths);
+    const marketValue = price * Math.pow(1 - depreciationRate, years);
 
-    // ===== NUA STRATEGY =====
-    // Initial tax at distribution: cost basis taxed at ordinary marginal tax rate now
-    const nuaInitialTax = data.costBasis * (data.marginalTaxRate / 100);
-    const nuaInitialPenalty = penaltyOnRetirementDist ? data.costBasis * 0.10 : 0;
-    const nuaTotalInitialTax = nuaInitialTax + nuaInitialPenalty;
+    // ===== LEASE CALCULATIONS =====
+    // Net cap cost = price - down payment (other fees NOT included in cap cost)
+    const netCapCost = price - downPayment;
+    const residualValue = price * residualPercent;
+    const leaseMonthlyRate = leaseApr / 12;
+    
+    // Depreciation
+    const monthlyDepreciation = (netCapCost - residualValue) / leaseTermMonths;
+    
+    // Finance charge (rent charge) - calculated on average value
+    const avgValue = (netCapCost + residualValue) / 2;
+    const monthlyFinanceCharge = avgValue * leaseMonthlyRate;
+    
+    // Sales tax applied to entire lease payment
+    const leasePaymentBeforeTax = monthlyDepreciation + monthlyFinanceCharge;
+    const leaseMonthlyPayment = leasePaymentBeforeTax * (1 + salesTaxRate);
+    
+    const totalLeasePayments = leaseMonthlyPayment * leaseTermMonths;
 
-    // Future taxes when stock is sold:
-    // - NUA portion taxed at long-term capital gains rate (per Dinkytown: treated as long-term cap gain even if sold immediately)
-    const nuaPortionTaxAtSale = Math.max(0, nua) * (data.capitalGainsRate / 100);
+    // ===== OPPORTUNITY COST CALCULATIONS =====
+    const monthlyInvestRate = investReturnRate / 12;
+    
+    // Payment difference (buy - lease)
+    const paymentDifference = buyMonthlyPayment - leaseMonthlyPayment;
+    
+    // BUY OPTION LOST INTEREST
+    // Lost interest on upfront costs
+    const buyUpfrontCash = downPayment + buyOtherFees;
+    let lostInterestBuy = 0;
+    
+    if (monthlyInvestRate > 0) {
+      // Interest lost on upfront cash
+      if (buyUpfrontCash > 0) {
+        lostInterestBuy += buyUpfrontCash * (Math.pow(1 + monthlyInvestRate, comparisonMonths) - 1);
+      }
+      
+      // If buy payment > lease payment, add lost interest on the difference
+      if (paymentDifference > 0) {
+        const fv = paymentDifference * ((Math.pow(1 + monthlyInvestRate, comparisonMonths) - 1) / monthlyInvestRate);
+        lostInterestBuy += fv - (paymentDifference * comparisonMonths);
+      }
+      // If lease payment > buy payment, subtract earned interest on the difference
+      else if (paymentDifference < 0) {
+        const absDiff = Math.abs(paymentDifference);
+        const fv = absDiff * ((Math.pow(1 + monthlyInvestRate, comparisonMonths) - 1) / monthlyInvestRate);
+        const earnedInterest = fv - (absDiff * comparisonMonths);
+        lostInterestBuy -= earnedInterest;
+      }
+    }
+    
+    // LEASE OPTION LOST INTEREST
+    // Lost interest on upfront costs (down payment + fees + security deposit)
+    const leaseUpfrontCash = downPayment + leaseOtherFees + securityDeposit;
+    let lostInterestLease = 0;
+    
+    if (monthlyInvestRate > 0 && leaseUpfrontCash > 0) {
+      lostInterestLease = leaseUpfrontCash * (Math.pow(1 + monthlyInvestRate, comparisonMonths) - 1);
+    }
 
-    // - Appreciation after distribution taxed as:
-    //     * ordinary income (marginal tax rate) if holding < 1 year
-    //     * long-term capital gains if holding >= 1 year
-    const appreciationTaxRate = holdingYears >= 1 ? (data.capitalGainsRate / 100) : (data.marginalTaxRate / 100);
-    const appreciationTaxAtSale = Math.max(0, appreciationAfterDistribution) * appreciationTaxRate;
+    // ===== NET COSTS =====
+    const netCostBuy = downPayment + buyOtherFees + totalLoanPayments + 
+                       lostInterestBuy + endingLoanBalance - marketValue;
+    
+    const netCostLease = downPayment + leaseOtherFees + totalLeasePayments + lostInterestLease;
 
-    const nuaTotalFutureTax = nuaPortionTaxAtSale + appreciationTaxAtSale;
+    // ===== BREAKDOWNS =====
+    const breakdown = [
+      { label: "Down payment", value: round2(downPayment) },
+      { label: "Other fees", value: round2(buyOtherFees) },
+      { label: "Loan payments", value: round2(totalLoanPayments) },
+      { label: "Lost interest", value: round2(lostInterestBuy) },
+      { label: "Ending loan balance", value: round2(endingLoanBalance) },
+      { label: "Market value (credit)", value: round2(-marketValue) },
+      { label: "Net cost", value: round2(netCostBuy) },
+    ];
 
-    // Total taxes (initial + future)
-    const nuaTotalTax = nuaTotalInitialTax + nuaTotalFutureTax;
+    const leaseBreakdown = [
+      { label: "Capital reduction", value: round2(downPayment) },
+      { label: "Other fees", value: round2(leaseOtherFees) },
+      { label: "Lease payments", value: round2(totalLeasePayments) },
+      { label: "Lost interest", value: round2(lostInterestLease) },
+      { label: "Net cost", value: round2(netCostLease) },
+    ];
 
-    // Net proceeds at sale (future value basis): FMV at sale minus ALL taxes paid (initial taxes were paid now, but for "future value" comparison we subtract all taxes)
-    const nuaNetProceeds = fmvAtSale - nuaTotalFutureTax - nuaTotalInitialTax; // taxes already removed
-
-    // Present value calculations:
-    // Discount only FUTURE taxes to present using inflationRate (per Dinkytown: discount future tax distributions).
-    const discountRate = data.inflationRate / 100;
-    const pvNuaFutureTax = nuaTotalFutureTax / Math.pow(1 + discountRate, holdingYears);
-    const pvNuaTotalTax = nuaTotalInitialTax + pvNuaFutureTax; // initial tax is "now" (no discount)
-    const pvNuaNetProceeds = data.balanceAtDistribution - pvNuaTotalTax;
-
-    // ===== IRA ROLLOVER STRATEGY =====
-    // If rolled over to IRA, the whole balance grows and when withdrawn later it's taxed as ordinary income (marginal)
-    const iraFmvAtSale = fmvAtSale;
-    const iraTotalTaxAtSale = iraFmvAtSale * (data.marginalTaxRate / 100);
-    const iraPenaltyAtSale = penaltyOnIraDist ? iraFmvAtSale * 0.10 : 0;
-    const iraTotalTaxWithPenalty = iraTotalTaxAtSale + iraPenaltyAtSale;
-
-    const iraNetProceeds = iraFmvAtSale - iraTotalTaxWithPenalty;
-
-    // Present value for IRA: discount future tax (all taxed at withdrawal) to present
-    const pvIraTax = iraTotalTaxWithPenalty / Math.pow(1 + discountRate, holdingYears);
-    const pvIraNetProceeds = data.balanceAtDistribution - pvIraTax;
-
-    // ===== Comparison & summary metrics =====
-    const advantage = nuaNetProceeds - iraNetProceeds;
-    const advantagePercent = iraNetProceeds !== 0 ? (advantage / Math.abs(iraNetProceeds)) * 100 : 0;
-
-    const pvAdvantage = pvNuaNetProceeds - pvIraNetProceeds;
-    const pvAdvantagePercent = pvIraNetProceeds !== 0 ? (pvAdvantage / Math.abs(pvIraNetProceeds)) * 100 : 0;
-
-    // Recommendation: compare present-value advantage (gives 'today' basis)
-    const betterStrategy = pvAdvantage > 0 ? 'NUA Strategy' : 'IRA Rollover';
+    const betterChoice = netCostBuy < netCostLease ? "Buy" : "Lease";
+    const difference = Math.abs(netCostBuy - netCostLease);
 
     return {
-      // Basic metrics
-      nua,
-      fmvAtSale,
-      appreciationAfterDistribution,
-
-      // NUA Strategy breakdown
-      nuaInitialTax,
-      nuaInitialPenalty,
-      nuaTotalInitialTax,
-      nuaPortionTaxAtSale,
-      appreciationTaxAtSale,
-      nuaTotalFutureTax,
-      nuaTotalTax,
-      nuaNetProceeds,
-      pvNuaFutureTax,
-      pvNuaTotalTax,
-      pvNuaNetProceeds,
-
-      // IRA Rollover breakdown
-      iraTotalTaxAtSale,
-      iraPenaltyAtSale,
-      iraTotalTaxWithPenalty,
-      iraNetProceeds,
-      pvIraTax,
-      pvIraNetProceeds,
-
+      // Monthly payments
+      buyMonthlyPayment: round2(buyMonthlyPayment),
+      leaseMonthlyPayment: round2(leaseMonthlyPayment),
+      
+      // Buy details
+      buyLoanAmount: round2(buyLoanAmount),
+      salesTax: round2(salesTax),
+      totalLoanPayments: round2(totalLoanPayments),
+      buyTotalLostInterest: round2(lostInterestBuy),
+      endingLoanBalance: round2(endingLoanBalance),
+      marketValue: round2(marketValue),
+      
+      // Lease details
+      totalLeasePayments: round2(totalLeasePayments),
+      leaseTotalLostInterest: round2(lostInterestLease),
+      
+      // Net costs
+      netCostBuy: round2(netCostBuy),
+      buyNetCost: round2(netCostBuy),
+      netCostLease: round2(netCostLease),
+      leaseNetCost: round2(netCostLease),
+      
       // Comparison
-      advantage,
-      advantagePercent,
-      pvAdvantage,
-      pvAdvantagePercent,
-      betterStrategy,
-
-      // Detailed breakdown for display
-      breakdown: [
-        { label: 'NUA Amount', value: nua, format: 'currency' },
-        { label: 'Cost Basis', value: data.costBasis, format: 'currency' },
-        { label: 'Initial Distribution FMV', value: data.balanceAtDistribution, format: 'currency' },
-        { label: 'Projected FMV at Sale', value: fmvAtSale, format: 'currency' },
-        { label: 'Post-Distribution Appreciation', value: appreciationAfterDistribution, format: 'currency' },
-      ],
-
-      nuaBreakdown: [
-        { label: 'Tax on Cost Basis (Ordinary Income)', value: nuaInitialTax, format: 'currency' },
-        { label: 'Penalty on Cost Basis (if applicable)', value: nuaInitialPenalty, format: 'currency' },
-        { label: 'Total Initial Tax', value: nuaTotalInitialTax, format: 'currency' },
-        { label: 'Tax on NUA (Capital Gains)', value: nuaPortionTaxAtSale, format: 'currency' },
-        { label: 'Tax on Appreciation (At Sale)', value: appreciationTaxAtSale, format: 'currency' },
-        { label: 'Total Future Tax', value: nuaTotalFutureTax, format: 'currency' },
-        { label: 'Total Tax (All)', value: nuaTotalTax, format: 'currency' },
-        { label: 'Net Proceeds (Future Value)', value: nuaNetProceeds, format: 'currency' },
-      ],
-
-      iraBreakdown: [
-        { label: 'Tax on Full Amount (Ordinary Income)', value: iraTotalTaxAtSale, format: 'currency' },
-        { label: 'Early Withdrawal Penalty (if applicable)', value: iraPenaltyAtSale, format: 'currency' },
-        { label: 'Total Tax', value: iraTotalTaxWithPenalty, format: 'currency' },
-        { label: 'Net Proceeds (Future Value)', value: iraNetProceeds, format: 'currency' },
-      ],
-
-      // Notes (human friendly)
-      notes: [
-        `Holding period: ${data.holdingPeriodYears} years and ${data.holdingPeriodMonths} months`,
-        penaltyOnRetirementDist ? 'Early withdrawal penalty (10%) applied to NUA initial distribution (cost basis)' : 'No early withdrawal penalty on NUA initial distribution',
-        penaltyOnIraDist ? 'Early withdrawal penalty (10%) will apply to IRA distribution' : 'No early withdrawal penalty on IRA distribution',
-        `NUA portion is treated as long-term capital gain (taxed at ${data.capitalGainsRate}%).`,
-        holdingYears < 1
-          ? 'Appreciation after distribution will be taxed as ordinary income (short-term) because holding period is under 1 year.'
-          : 'Appreciation after distribution will be taxed as long-term capital gain because holding period is at least 1 year.',
-        `The ${betterStrategy} provides ${Math.abs(pvAdvantagePercent).toFixed(2)}% ${pvAdvantage > 0 ? 'more' : 'less'} net proceeds on a present-value basis.`,
-      ],
+      betterChoice,
+      difference: round2(difference),
+      
+      // Breakdowns
+      breakdown,
+      leaseBreakdown,
     };
   },
 
   charts: [
     {
-      title: 'Strategy Comparison: Net Proceeds',
+      title: 'Total Net Cost Comparison',
       type: 'bar',
       height: 350,
-      xKey: 'strategy',
+      xKey: 'option',
       format: 'currency',
       showLegend: false,
       data: (results) => [
-        { 
-          strategy: 'NUA Strategy', 
-          value: results.nuaNetProceeds,
-          color: '#378CE7'
-        },
-        { 
-          strategy: 'IRA Rollover', 
-          value: results.iraNetProceeds,
-          color: '#245383'
-        },
+        { option: 'Buy', value: results.netCostBuy },
+        { option: 'Lease', value: results.netCostLease },
       ],
       bars: [
-        { key: 'value', name: 'Net Proceeds', color: '#378CE7' }
+        { key: 'value', name: 'Net Cost', color: '#3B82F6' }
       ],
-      description: 'Future value comparison of net proceeds after all taxes'
+      description: 'Total net cost comparison over the lease term'
     },
     {
-      title: 'Total Tax Comparison',
+      title: 'Monthly Payment Comparison',
       type: 'bar',
-      height: 350,
-      xKey: 'strategy',
+      height: 300,
+      xKey: 'option',
       format: 'currency',
       showLegend: false,
       data: (results) => [
-        { 
-          strategy: 'NUA Strategy', 
-          value: results.nuaTotalTax,
-          color: '#F87171'
-        },
-        { 
-          strategy: 'IRA Rollover', 
-          value: results.iraTotalTaxWithPenalty,
-          color: '#DC2626'
-        },
+        { option: 'Buy', value: results.buyMonthlyPayment },
+        { option: 'Lease', value: results.leaseMonthlyPayment },
       ],
       bars: [
-        { key: 'value', name: 'Total Tax', color: '#F87171' }
+        { key: 'value', name: 'Monthly Payment', color: '#10B981' }
       ],
-      description: 'Total tax liability for each strategy'
+      description: 'Monthly payment comparison'
     },
     {
-      title: 'Present Value Comparison',
+      title: 'Cost Breakdown Comparison',
       type: 'bar',
-      height: 350,
-      xKey: 'strategy',
+      height: 400,
+      xKey: 'category',
       format: 'currency',
-      showLegend: false,
+      showLegend: true,
       data: (results) => [
         { 
-          strategy: 'NUA Strategy', 
-          value: results.pvNuaNetProceeds,
-          color: '#378CE7'
+          category: 'Upfront Costs', 
+          'Buy': results.breakdown[0].value + results.breakdown[1].value,
+          'Lease': results.leaseBreakdown[0].value + results.leaseBreakdown[1].value
         },
         { 
-          strategy: 'IRA Rollover', 
-          value: results.pvIraNetProceeds,
-          color: '#245383'
+          category: 'Payments', 
+          'Buy': results.totalLoanPayments,
+          'Lease': results.totalLeasePayments
+        },
+        { 
+          category: 'Lost Interest', 
+          'Buy': results.buyTotalLostInterest,
+          'Lease': results.leaseTotalLostInterest
         },
       ],
       bars: [
-        { key: 'value', name: 'Present Value Net Proceeds', color: '#378CE7' }
+        { key: 'Buy', name: 'Buy', color: '#3B82F6' },
+        { key: 'Lease', name: 'Lease', color: '#10B981' }
       ],
-      description: `Net proceeds adjusted for ${defaults.inflationRate}% inflation rate`
+      description: 'Detailed cost breakdown by category'
     },
   ]
 };

@@ -1,34 +1,38 @@
 export const results = [
   { 
-    key: 'nua', 
-    label: 'Net Unrealized Appreciation (NUA)', 
-    format: 'currency'
+    key: 'betterChoice', 
+    label: 'Recommendation',
+    format: 'text',
+    description: 'Which option is more cost-effective'
   },
   { 
-    key: 'betterStrategy', 
-    label: 'Recommended Strategy', 
-    format: 'text'
-  },
-  { 
-    key: 'advantage', 
-    label: 'NUA Strategy Advantage (Future Value)', 
+    key: 'difference', 
+    label: 'Cost Difference',
     format: 'currency',
-    description: 'How much more you would have with NUA vs IRA rollover'
+    description: 'How much you save with the better option'
   },
   { 
-    key: 'advantagePercent', 
-    label: 'Advantage %', 
-    format: 'percentage'
-  },
-  { 
-    key: 'pvAdvantage', 
-    label: 'NUA Strategy Advantage (Present Value)', 
+    key: 'netCostBuy', 
+    label: 'Total Cost to Buy',
     format: 'currency',
-    description: 'Advantage adjusted for inflation'
+    description: 'Net cost of buying over the comparison period'
   },
   { 
-    key: 'pvAdvantagePercent', 
-    label: 'Advantage % (PV)', 
-    format: 'percentage'
+    key: 'netCostLease', 
+    label: 'Total Cost to Lease',
+    format: 'currency',
+    description: 'Net cost of leasing over the lease term'
+  },
+  { 
+    key: 'buyMonthlyPayment', 
+    label: 'Buy Monthly Payment',
+    format: 'currency',
+    description: 'Monthly loan payment for buying'
+  },
+  { 
+    key: 'leaseMonthlyPayment', 
+    label: 'Lease Monthly Payment',
+    format: 'currency',
+    description: 'Monthly lease payment'
   },
 ];

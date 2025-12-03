@@ -1,100 +1,128 @@
 export const inputs = [
+  // ===== Common Fields =====
   { 
-    name: 'balanceAtDistribution', 
-    label: 'Balance at Time of Distribution (FMV)', 
+    name: 'purchasePrice', 
+    label: 'Purchase Price', 
     type: 'number',
     format: 'currency',
-    required: true, 
-    hint: 'Fair market value of company stock to be distributed' 
-  },
-  { 
-    name: 'costBasis', 
-    label: 'Total Stock Purchases (Cost Basis)', 
-    type: 'number',
-    format: 'currency',
-    required: true, 
-    hint: 'Total amount paid for the stock (you and/or employer contributions)' 
-  },
-  { 
-    name: 'rateOfReturn', 
-    label: 'Rate of Return', 
-    type: 'number',
-    format: 'percentage',
-    step: 0.1, 
-    hint: 'Expected annual return on company stock' 
-  },
-  { 
-    name: 'holdingPeriodYears', 
-    label: 'Holding Period (Years)', 
-    type: 'number',
     required: true,
-    hint: 'Years you expect to hold the stock after distribution' 
+    section: 'Vehicle Information',
+    hint: 'Total purchase price (after any manufacturer\'s rebate)' 
   },
   { 
-    name: 'holdingPeriodMonths', 
-    label: 'Holding Period (Additional Months)', 
+    name: 'downPayment', 
+    label: 'Down Payment / Capital Reduction', 
     type: 'number',
-    hint: 'Additional months beyond full years (0-11)' 
+    format: 'currency',
+    required: true,
+    section: 'Vehicle Information',
+    hint: 'Amount paid upfront (for leases, this is often called capital reduction)' 
   },
   { 
-    name: 'capitalGainsRate', 
-    label: 'Capital Gains Tax Rate', 
-    type: 'number',
-    format: 'percentage',
-    step: 0.1, 
-    hint: 'Long-term capital gains tax rate (typically 0%, 15%, or 20%)' 
-  },
-  { 
-    name: 'marginalTaxRate', 
-    label: 'Marginal Income Tax Rate', 
-    type: 'number',
-    format: 'percentage',
-    step: 0.1, 
-    hint: 'Your ordinary income tax rate' 
-  },
-  { 
-    name: 'inflationRate', 
-    label: 'Expected Inflation Rate', 
+    name: 'salesTaxRate', 
+    label: 'Sales Tax Rate', 
     type: 'number',
     format: 'percentage',
     step: 0.1,
-    hint: 'Long-term average inflation rate for present value calculations' 
+    required: true,
+    section: 'Vehicle Information',
+    hint: 'Sales tax is included in each lease payment. For buying, it\'s charged on the total sale amount.' 
   },
   { 
-    name: 'currentAge', 
-    label: 'Current Age', 
+    name: 'investmentReturnRate', 
+    label: 'Investment Rate of Return', 
+    type: 'number',
+    format: 'percentage',
+    step: 0.1,
+    required: true,
+    section: 'Vehicle Information',
+    hint: 'Expected annual return if you invest your down payment instead' 
+  },
+  
+  // ===== Buy Option =====
+  { 
+    name: 'loanTermMonths', 
+    label: 'Loan Term (Months)', 
     type: 'number',
     required: true,
-    hint: 'Your current age' 
+    section: 'Buy Option',
+    hint: 'Typical terms are 36, 48, 60, or 72 months' 
   },
   { 
-    name: 'separatedAtAge55', 
-    label: 'Separated from Service at Age 55 or Older', 
-    type: 'select',
-    options: [
-      { value: false, label: 'No' },
-      { value: true, label: 'Yes' }
-    ],
-    hint: 'Check if you separated in/after the year you turned 55 (no 10% penalty)' 
+    name: 'loanInterestRate', 
+    label: 'Loan Interest Rate', 
+    type: 'number',
+    format: 'percentage',
+    step: 0.1,
+    required: true,
+    section: 'Buy Option',
+    hint: 'Annual interest rate for your auto loan' 
   },
   { 
-    name: 'retirementDistributionAfter59Half', 
-    label: 'Retirement Plan Distribution at Age 59½ or Older', 
-    type: 'select',
-    options: [
-      { value: false, label: 'No' },
-      { value: true, label: 'Yes' }
-    ],
-    hint: 'Check if distribution occurs at/after age 59½ (no 10% penalty)' 
+    name: 'buyOtherFees', 
+    label: 'Other Fees (Buy)', 
+    type: 'number',
+    format: 'currency',
+    required: true,
+    section: 'Buy Option',
+    hint: 'License, title transfer fees, etc. paid at time of purchase' 
   },
   { 
-    name: 'iraDistributionAfter59Half', 
-    label: 'IRA Distribution at Age 59½ or Older', 
-    type: 'select',
-    options: [
-      { value: false, label: 'No' },
-      { value: true, label: 'Yes' }
-    ],
-    hint: 'Check if IRA distribution occurs at/after age 59½ (no 10% penalty)' 
+    name: 'annualDepreciationRate', 
+    label: 'Annual Depreciation Rate', 
+    type: 'number',
+    format: 'percentage',
+    step: 0.1,
+    required: true,
+    section: 'Buy Option',
+    hint: 'High: 20%, Medium: 15%, Low: 10%' 
+  },
+  
+  // ===== Lease Option =====
+  { 
+    name: 'leaseTermMonths', 
+    label: 'Lease Term (Months)', 
+    type: 'number',
+    required: true,
+    section: 'Lease Option',
+    hint: 'Term in months for your auto lease' 
+  },
+  { 
+    name: 'leaseInterestRate', 
+    label: 'Lease Interest Rate', 
+    type: 'number',
+    format: 'percentage',
+    step: 0.1,
+    required: true,
+    section: 'Lease Option',
+    hint: 'Annual interest rate (money factor × 2400) for your lease' 
+  },
+  { 
+    name: 'leaseOtherFees', 
+    label: 'Other Fees (Lease)', 
+    type: 'number',
+    format: 'currency',
+    required: true,
+    section: 'Lease Option',
+    hint: 'License, title transfer fees, etc. paid at close of lease' 
+  },
+  { 
+    name: 'residualPercent', 
+    label: 'Residual Value (%)', 
+    type: 'number',
+    format: 'percentage',
+    step: 0.1,
+    required: true,
+    section: 'Lease Option',
+    hint: 'Remaining value after lease term expires. Higher = lower lease payment' 
+  },
+  { 
+    name: 'securityDeposit', 
+    label: 'Security Deposit', 
+    type: 'number',
+    format: 'currency',
+    required: true,
+    section: 'Lease Option',
+    hint: 'Refundable security deposit required at time of lease' 
   },
 ];

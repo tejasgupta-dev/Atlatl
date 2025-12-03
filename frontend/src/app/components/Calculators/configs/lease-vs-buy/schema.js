@@ -1,16 +1,67 @@
 import { z } from 'zod';
 
 export const schema = z.object({
-  balanceAtDistribution: z.number().min(0, 'Must be 0 or greater'),
-  costBasis: z.number().min(0, 'Must be 0 or greater'),
-  rateOfReturn: z.number().min(-100, 'Must be -100% or greater').max(200, 'Must be 200% or less'),
-  holdingPeriodYears: z.number().min(0, 'Must be 0 or greater').max(50, 'Must be 50 years or less'),
-  holdingPeriodMonths: z.number().min(0, 'Must be 0 or greater').max(11, 'Must be 11 months or less'),
-  capitalGainsRate: z.number().min(0, 'Must be 0 or greater').max(100, 'Must be 100% or less'),
-  marginalTaxRate: z.number().min(0, 'Must be 0 or greater').max(100, 'Must be 100% or less'),
-  inflationRate: z.number().min(0, 'Must be 0 or greater').max(100, 'Must be 100% or less'),
-  currentAge: z.number().min(0, 'Must be 0 or greater').max(120, 'Must be 120 or less'),
-  separatedAtAge55: z.boolean(),
-  retirementDistributionAfter59Half: z.boolean(),
-  iraDistributionAfter59Half: z.boolean(),
-});
+  // Common fields
+  purchasePrice: z.number()
+    .min(1000, 'Purchase price must be at least $1,000')
+    .max(1000000, 'Purchase price seems unreasonably high'),
+  
+  downPayment: z.number()
+    .min(0, 'Down payment cannot be negative')
+    .max(1000000, 'Down payment seems unreasonably high'),
+  
+  salesTaxRate: z.number()
+    .min(0, 'Sales tax rate cannot be negative')
+    .max(20, 'Sales tax rate seems unreasonably high'),
+  
+  investmentReturnRate: z.number()
+    .min(0, 'Investment return rate cannot be negative')
+    .max(50, 'Investment return rate seems unreasonably high'),
+  
+  // Buy option fields
+  loanTermMonths: z.number()
+    .int('Must be a whole number')
+    .min(12, 'Loan term must be at least 12 months')
+    .max(96, 'Loan term cannot exceed 96 months'),
+  
+  loanInterestRate: z.number()
+    .min(0, 'Interest rate cannot be negative')
+    .max(30, 'Interest rate seems unreasonably high'),
+  
+  buyOtherFees: z.number()
+    .min(0, 'Fees cannot be negative')
+    .max(100000, 'Fees seem unreasonably high'),
+  
+  annualDepreciationRate: z.number()
+    .min(0, 'Depreciation rate cannot be negative')
+    .max(50, 'Depreciation rate seems unreasonably high'),
+  
+  // Lease option fields
+  leaseTermMonths: z.number()
+    .int('Must be a whole number')
+    .min(12, 'Lease term must be at least 12 months')
+    .max(60, 'Lease term cannot exceed 60 months'),
+  
+  leaseInterestRate: z.number()
+    .min(0, 'Interest rate cannot be negative')
+    .max(30, 'Interest rate seems unreasonably high'),
+  
+  leaseOtherFees: z.number()
+    .min(0, 'Fees cannot be negative')
+    .max(100000, 'Fees seem unreasonably high'),
+  
+  residualPercent: z.number()
+    .min(0, 'Residual percent cannot be negative')
+    .max(100, 'Residual percent cannot exceed 100%'),
+  
+  securityDeposit: z.number()
+    .min(0, 'Security deposit cannot be negative')
+    .max(100000, 'Security deposit seems unreasonably high'),
+})
+.refine(
+  (data) => data.downPayment <= data.purchasePrice,
+  {
+    message: 'Down payment cannot exceed purchase price',
+    path: ['downPayment'],
+  }
+);

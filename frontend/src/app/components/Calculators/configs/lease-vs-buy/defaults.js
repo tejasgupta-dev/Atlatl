@@ -1,14 +1,20 @@
 export const defaults = {
-  balanceAtDistribution: 250000,
-  costBasis: 100000,
-  rateOfReturn: 8,
-  holdingPeriodYears: 2,
-  holdingPeriodMonths: 0,
-  capitalGainsRate: 13.5,
-  marginalTaxRate: 25,
-  inflationRate: 3,
-  currentAge: 60,
-  separatedAtAge55: true,
-  retirementDistributionAfter59Half: true,
-  iraDistributionAfter59Half: true,
+  // Common fields
+  purchasePrice: 20000,
+  downPayment: 1000,
+  salesTaxRate: 6,
+  investmentReturnRate: 7,
+  
+  // Buy option fields
+  loanTermMonths: 60,
+  loanInterestRate: 8,
+  buyOtherFees: 0,
+  annualDepreciationRate: 20,
+  
+  // Lease option fields
+  leaseTermMonths: 24,
+  leaseInterestRate: 8,
+  leaseOtherFees: 100,
+  residualPercent: 60,
+  securityDeposit: 500,
 };
