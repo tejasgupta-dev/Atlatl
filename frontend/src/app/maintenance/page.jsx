@@ -4,16 +4,12 @@ import { FaLocationDot, FaPhone } from "react-icons/fa6";
 import { CiMail } from "react-icons/ci";
 
 export default function MaintenancePage() {
-  // Using a placeholder image that matches the serene, building/balance vibe of your other images.
-  // In production, replace this with a local image like '/images/maintenance-stones.jpg'
   const maintenanceImage = "https://images.unsplash.com/photo-1475503572774-15a45e5d60b9?ixid=M3w4MjcwNjd8MHwxfHNlYXJjaHw3fHxmYW1pbHl8ZW58MHx8fHwxNzY0NzIzMTc3fDA&ixlib=rb-4.1.0&fit=max&q=80";
 
   return (
     <main className="min-h-screen relative bg-white overflow-hidden flex items-center justify-center">
-      {/* --- Background Patterns (Matches the vibe of image_0.png, image_3.png) --- */}
-      {/* Replace src with your actual local vector files if you have them */}
       <img
-        src="/images/vector_60.svg" // Assuming this is the gray diagonal pattern
+        src="/images/vector_60.svg"
         alt=""
         className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none opacity-50"
       />
@@ -50,8 +46,6 @@ export default function MaintenancePage() {
             </div>
 
             {/* --- Alternative Contact Section --- */}
-            {/* Since the site is down, offer ways to get in touch immediately. 
-                Styles match the footer vibe in image_5.png */}
             <div className="bg-light-blue/20 p-8 rounded-2xl border border-bold-blue/10 mt-8 max-w-xl mx-auto lg:mx-0">
               <h2 className="text-2xl font-songer text-darker-bold-blue font-bold mb-6 uppercase">
                 Need to reach us now?
