@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getTeamMemberDetails } from "@/lib/strapi";
 import Markdown from "@/app/components/Markdown";
+import { getFullMediaUrl } from "@/lib/helper";
 
 export default async function TeamPage({ params }) {
   const { slug } = params;
@@ -9,7 +10,7 @@ export default async function TeamPage({ params }) {
   if (!memberInfo) return notFound();
 
   const imageUrl = memberInfo.avatar.url;
-  const fullImageUrl = process.env.NEXT_PUBLIC_STRAPI_API_URL ? `${process.env.NEXT_PUBLIC_STRAPI_API_URL}${imageUrl}` : "localhost:1337" + imageUrl;
+  const fullImageUrl = getFullMediaUrl(imageUrl);
   const fullName = memberInfo.suffix ? memberInfo.name + ", " + memberInfo.suffix : memberInfo.name;
 
   return (

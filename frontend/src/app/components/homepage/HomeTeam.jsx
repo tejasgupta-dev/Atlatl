@@ -1,7 +1,10 @@
 import { getFeaturedTeamMembers } from "@/lib/strapi";
+import { getFullMediaUrl } from "@/lib/helper";
+import Link from "next/link";
 
 export default async function HomeTeam({ half_toggle = true }) {
   const teamMembers = await getFeaturedTeamMembers();
+
   return (
     <div className="flex flex-col items-center w-full">
       <div className="flex flex-col justify-center items-center w-full font-work-sans bg-dark-blue text-white text-center">
@@ -19,7 +22,7 @@ export default async function HomeTeam({ half_toggle = true }) {
       <div className="w-full flex flex-col lg:flex-row items-center lg:items-start lg:justify-between px-6 lg:px-[15%] gap-12 lg:gap-8">
         {teamMembers.map((teamMember, index) => {
           const imageUrl = teamMember.avatar.url;
-          const fullImageUrl = process.env.NEXT_PUBLIC_STRAPI_API_URL ? `${process.env.NEXT_PUBLIC_STRAPI_API_URL}${imageUrl}` : "localhost:1337" + imageUrl;
+          const fullImageUrl = getFullMediaUrl(imageUrl);
           return (
             <div
               key={teamMember.id}
@@ -39,11 +42,11 @@ export default async function HomeTeam({ half_toggle = true }) {
         })}
       </div>
       
-      <button className="font-songer bg-bold-blue text-white font-bold py-3 px-8 mt-8 shadow-md rounded-full
+      <Link href="/team" className="font-songer bg-bold-blue text-white font-bold py-3 px-8 mt-8 shadow-md rounded-full
           hover:bg-white hover:text-bold-blue hover:shadow-xl 
           transition-all duration-300 transform hover:-translate-y-0.5 hover:cursor-pointer">
-        VIEW MORE TEAM MEMBERS
-      </button>
+          VIEW MORE TEAM MEMBERS
+      </Link>
     </div>
   );
 }

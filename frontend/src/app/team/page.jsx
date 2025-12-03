@@ -1,4 +1,5 @@
 import { getFeaturedTeamMembers } from "@/lib/strapi";
+import { getFullMediaUrl } from "@/lib/helper";
 import Link from "next/link";
 export default async function HomeTeam() {
   const teamMembers = await getFeaturedTeamMembers(false);
@@ -11,7 +12,7 @@ export default async function HomeTeam() {
       <div className="w-full max-w-7xl px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16">
         {teamMembers.map((teamMember, index) => {
           const imageUrl = teamMember.avatar.url;
-          const fullImageUrl = process.env.NEXT_PUBLIC_STRAPI_API_URL ? `${process.env.NEXT_PUBLIC_STRAPI_API_URL}${imageUrl}` : "localhost:1337" + imageUrl;
+          const fullImageUrl = getFullMediaUrl(imageUrl);
           const profileLink = `/team/${teamMember.slug}`
           return (
             <Link 
