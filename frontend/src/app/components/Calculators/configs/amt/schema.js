@@ -1,16 +1,29 @@
 import { z } from 'zod';
 
 export const schema = z.object({
-  balanceAtDistribution: z.number().min(0, 'Must be 0 or greater'),
-  costBasis: z.number().min(0, 'Must be 0 or greater'),
-  rateOfReturn: z.number().min(-100, 'Must be -100% or greater').max(200, 'Must be 200% or less'),
-  holdingPeriodYears: z.number().min(0, 'Must be 0 or greater').max(50, 'Must be 50 years or less'),
-  holdingPeriodMonths: z.number().min(0, 'Must be 0 or greater').max(11, 'Must be 11 months or less'),
-  capitalGainsRate: z.number().min(0, 'Must be 0 or greater').max(100, 'Must be 100% or less'),
-  marginalTaxRate: z.number().min(0, 'Must be 0 or greater').max(100, 'Must be 100% or less'),
-  inflationRate: z.number().min(0, 'Must be 0 or greater').max(100, 'Must be 100% or less'),
-  currentAge: z.number().min(0, 'Must be 0 or greater').max(120, 'Must be 120 or less'),
-  separatedAtAge55: z.boolean(),
-  retirementDistributionAfter59Half: z.boolean(),
-  iraDistributionAfter59Half: z.boolean(),
+  // Personal Information
+  filingStatus: z.enum(['single', 'married', 'marriedSeparate', 'headOfHousehold']),
+  annualIncome: z.number().min(0, 'Must be 0 or greater'),
+  
+  // ISO Exercise Information
+  sharesExercised: z.number().min(0, 'Must be 0 or greater'),
+  strikePrice: z.number().min(0, 'Must be 0 or greater'),
+  fmv409a: z.number().min(0, 'Must be 0 or greater'),
+  
+  // Deductions
+  standardDeduction: z.boolean(),
+  itemizedDeductions: z.number().min(0, 'Must be 0 or greater'),
+  saltDeduction: z.number().min(0, 'Must be 0 or greater'),
+  
+  // Other Income
+  capitalGainsLongTerm: z.number().min(0, 'Must be 0 or greater'),
+  capitalGainsShortTerm: z.number().min(0, 'Must be 0 or greater'),
+}).refine((data) => {
+  if (data.fmv409a > 0 && data.strikePrice > data.fmv409a) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Strike price cannot exceed Fair Market Value",
+  path: ["strikePrice"],
 });

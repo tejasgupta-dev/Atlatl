@@ -3,243 +3,316 @@ import { defaults } from './defaults';
 import { inputs } from './inputs';
 import { results } from './results';
 
+// 2025 Tax Constants (Updated per IRS)
+const TAX_CONSTANTS_2024 = {
+  standardDeductions: {
+    single: 14600,
+    married: 29200,
+    marriedSeparate: 14600,
+    headOfHousehold: 21900
+  },
+  amtExemptions: {
+    single: 88100,
+    married: 137000,
+    marriedSeparate: 68650,
+    headOfHousehold: 88100
+  },
+  amtPhaseoutThresholds: {
+    single: 626350,
+    married: 1252700,
+    marriedSeparate: 626350,
+    headOfHousehold: 626350
+  },
+  amtRateThreshold: {
+    single: 220700,
+    married: 220700,
+    marriedSeparate: 110350,
+    headOfHousehold: 220700
+  },
+  regularTaxBrackets: {
+    single: [
+      { limit: 11600, rate: 0.10 },
+      { limit: 47150, rate: 0.12 },
+      { limit: 100525, rate: 0.22 },
+      { limit: 191950, rate: 0.24 },
+      { limit: 243725, rate: 0.32 },
+      { limit: 609350, rate: 0.35 },
+      { limit: Infinity, rate: 0.37 }
+    ],
+    married: [
+      { limit: 23200, rate: 0.10 },
+      { limit: 94300, rate: 0.12 },
+      { limit: 201050, rate: 0.22 },
+      { limit: 383900, rate: 0.24 },
+      { limit: 487450, rate: 0.32 },
+      { limit: 731200, rate: 0.35 },
+      { limit: Infinity, rate: 0.37 }
+    ],
+    marriedSeparate: [
+      { limit: 11600, rate: 0.10 },
+      { limit: 47150, rate: 0.12 },
+      { limit: 100525, rate: 0.22 },
+      { limit: 191950, rate: 0.24 },
+      { limit: 243725, rate: 0.32 },
+      { limit: 365600, rate: 0.35 },
+      { limit: Infinity, rate: 0.37 }
+    ],
+    headOfHousehold: [
+      { limit: 16550, rate: 0.10 },
+      { limit: 63100, rate: 0.12 },
+      { limit: 100500, rate: 0.22 },
+      { limit: 191950, rate: 0.24 },
+      { limit: 243700, rate: 0.32 },
+      { limit: 609350, rate: 0.35 },
+      { limit: Infinity, rate: 0.37 }
+    ]
+  }
+};
+
 export const config = {
-  title: 'Company Stock Distribution Analysis Calculator',
-  description: 'Compare NUA (Net Unrealized Appreciation) strategy versus IRA rollover for company stock distributions from your retirement plan',
+  title: 'Alternative Minimum Tax (AMT) Calculator',
+  description: 'Calculate your AMT liability from exercising Incentive Stock Options (ISOs)',
   schema,
   defaultValues: defaults,
   inputs,
   results,
 
   calculate: (data) => {
-    /*
-    Dinkytown-style implementation:
-     - NUA = FMV at distribution - cost basis
-     - At distribution (NUA strategy): pay ordinary income tax on cost basis now (and 10% penalty on cost basis if not qualified)
-     - NUA portion is taxed as long-term capital gain when sold (even if sold immediately)
-     - Appreciation AFTER distribution: taxed as short-term (ordinary) if sold within 1 year, otherwise long-term capital gain
-     - IRA rollover: entire amount taxed as ordinary income when withdrawn (plus 10% penalty if applicable)
-     - Present value calculations: discount FUTURE taxes to present using inflationRate
-    */
+    // Parse inputs
+    const filingStatus = data.filingStatus;
+    const useStandardDeduction = typeof data.standardDeduction === 'string'
+      ? data.standardDeduction === 'true'
+      : Boolean(data.standardDeduction);
 
-    const nua = data.balanceAtDistribution - data.costBasis;
+    // Calculate ISO Spread (Bargain Element)
+    const isoSpread = Math.max(0, (data.fmv409a - data.strikePrice) * data.sharesExercised);
+    
+    // Total ordinary income (wages + short-term capital gains)
+    const ordinaryIncome = data.annualIncome + data.capitalGainsShortTerm;
 
-    // Convert holding period to decimal years
-    const holdingYears = data.holdingPeriodYears + (data.holdingPeriodMonths || 0) / 12;
+    // ===== REGULAR TAX CALCULATION =====
+    
+    // Step 1: Calculate standard or itemized deduction
+    const standardDeduction = TAX_CONSTANTS_2024.standardDeductions[filingStatus];
+    const totalDeductions = useStandardDeduction 
+      ? standardDeduction 
+      : Math.max(data.itemizedDeductions + data.saltDeduction, standardDeduction);
+    
+    // Step 2: Calculate taxable income
+    const regularTaxableIncome = Math.max(0, ordinaryIncome - totalDeductions);
+    
+    // Step 3: Calculate regular tax using progressive brackets
+    const regularTax = calculateTaxFromBrackets(
+      regularTaxableIncome,
+      TAX_CONSTANTS_2024.regularTaxBrackets[filingStatus]
+    );
+    
+    // Step 4: Add capital gains tax (15% for most taxpayers)
+    const capitalGainsTax = data.capitalGainsLongTerm * 0.15;
+    const totalRegularTax = regularTax + capitalGainsTax;
 
-    // Future FMV after holding period (applies equally for both strategies)
-    const fmvAtSale = data.balanceAtDistribution * Math.pow(1 + data.rateOfReturn / 100, holdingYears);
-
-    // Appreciation that occurs AFTER the distribution event
-    const appreciationAfterDistribution = fmvAtSale - data.balanceAtDistribution;
-
-    // Penalty conditions:
-    // For cost-basis taxation at distribution (NUA initial tax), penalty applies unless separatedAtAge55 OR distribution is at/after 59.5
-    const penaltyOnRetirementDist = !(data.separatedAtAge55 || data.retirementDistributionAfter59Half);
-    // For IRA distributions (rolled-over funds), penalty applies if IRA distribution occurs before 59.5
-    const penaltyOnIraDist = !data.iraDistributionAfter59Half;
-
-    // ===== NUA STRATEGY =====
-    // Initial tax at distribution: cost basis taxed at ordinary marginal tax rate now
-    const nuaInitialTax = data.costBasis * (data.marginalTaxRate / 100);
-    const nuaInitialPenalty = penaltyOnRetirementDist ? data.costBasis * 0.10 : 0;
-    const nuaTotalInitialTax = nuaInitialTax + nuaInitialPenalty;
-
-    // Future taxes when stock is sold:
-    // - NUA portion taxed at long-term capital gains rate (per Dinkytown: treated as long-term cap gain even if sold immediately)
-    const nuaPortionTaxAtSale = Math.max(0, nua) * (data.capitalGainsRate / 100);
-
-    // - Appreciation after distribution taxed as:
-    //     * ordinary income (marginal tax rate) if holding < 1 year
-    //     * long-term capital gains if holding >= 1 year
-    const appreciationTaxRate = holdingYears >= 1 ? (data.capitalGainsRate / 100) : (data.marginalTaxRate / 100);
-    const appreciationTaxAtSale = Math.max(0, appreciationAfterDistribution) * appreciationTaxRate;
-
-    const nuaTotalFutureTax = nuaPortionTaxAtSale + appreciationTaxAtSale;
-
-    // Total taxes (initial + future)
-    const nuaTotalTax = nuaTotalInitialTax + nuaTotalFutureTax;
-
-    // Net proceeds at sale (future value basis): FMV at sale minus ALL taxes paid (initial taxes were paid now, but for "future value" comparison we subtract all taxes)
-    const nuaNetProceeds = fmvAtSale - nuaTotalFutureTax - nuaTotalInitialTax; // taxes already removed
-
-    // Present value calculations:
-    // Discount only FUTURE taxes to present using inflationRate (per Dinkytown: discount future tax distributions).
-    const discountRate = data.inflationRate / 100;
-    const pvNuaFutureTax = nuaTotalFutureTax / Math.pow(1 + discountRate, holdingYears);
-    const pvNuaTotalTax = nuaTotalInitialTax + pvNuaFutureTax; // initial tax is "now" (no discount)
-    const pvNuaNetProceeds = data.balanceAtDistribution - pvNuaTotalTax;
-
-    // ===== IRA ROLLOVER STRATEGY =====
-    // If rolled over to IRA, the whole balance grows and when withdrawn later it's taxed as ordinary income (marginal)
-    const iraFmvAtSale = fmvAtSale;
-    const iraTotalTaxAtSale = iraFmvAtSale * (data.marginalTaxRate / 100);
-    const iraPenaltyAtSale = penaltyOnIraDist ? iraFmvAtSale * 0.10 : 0;
-    const iraTotalTaxWithPenalty = iraTotalTaxAtSale + iraPenaltyAtSale;
-
-    const iraNetProceeds = iraFmvAtSale - iraTotalTaxWithPenalty;
-
-    // Present value for IRA: discount future tax (all taxed at withdrawal) to present
-    const pvIraTax = iraTotalTaxWithPenalty / Math.pow(1 + discountRate, holdingYears);
-    const pvIraNetProceeds = data.balanceAtDistribution - pvIraTax;
-
-    // ===== Comparison & summary metrics =====
-    const advantage = nuaNetProceeds - iraNetProceeds;
-    const advantagePercent = iraNetProceeds !== 0 ? (advantage / Math.abs(iraNetProceeds)) * 100 : 0;
-
-    const pvAdvantage = pvNuaNetProceeds - pvIraNetProceeds;
-    const pvAdvantagePercent = pvIraNetProceeds !== 0 ? (pvAdvantage / Math.abs(pvIraNetProceeds)) * 100 : 0;
-
-    // Recommendation: compare present-value advantage (gives 'today' basis)
-    const betterStrategy = pvAdvantage > 0 ? 'NUA Strategy' : 'IRA Rollover';
+    // ===== AMT CALCULATION (Following Form 6251) =====
+    
+    // Step 1: Start with taxable income (per Bench.co guidance)
+    let amti = regularTaxableIncome;
+    
+    // Step 2: Make required adjustments (add back AMT preference items)
+    
+    // Add back state and local taxes (SALT) - disallowed under AMT
+    amti += data.saltDeduction;
+    
+    // Add back ISO spread (incentive stock option exercise)
+    amti += isoSpread;
+    
+    // If using standard deduction, add it back (AMT uses exemption instead)
+    if (useStandardDeduction) {
+      amti += standardDeduction;
+    }
+    
+    // Add long-term capital gains for exemption calculation
+    const amtiForExemption = amti + data.capitalGainsLongTerm;
+    
+    // Step 3: Calculate and subtract AMT exemption
+    const amtExemption = TAX_CONSTANTS_2024.amtExemptions[filingStatus];
+    const phaseoutThreshold = TAX_CONSTANTS_2024.amtPhaseoutThresholds[filingStatus];
+    
+    let exemptionAmount = amtExemption;
+    if (amtiForExemption > phaseoutThreshold) {
+      // Exemption phases out at 25 cents per dollar over threshold
+      const phaseoutReduction = (amtiForExemption - phaseoutThreshold) * 0.25;
+      exemptionAmount = Math.max(0, amtExemption - phaseoutReduction);
+    }
+    
+    // Subtract exemption to get final AMTI
+    const finalAMTI = Math.max(0, amti - exemptionAmount);
+    
+    // Step 4: Apply AMT tax rates (26% or 28%)
+    const rateThreshold = TAX_CONSTANTS_2024.amtRateThreshold[filingStatus];
+    let amtTax = 0;
+    
+    if (finalAMTI <= rateThreshold) {
+      amtTax = finalAMTI * 0.26;
+    } else {
+      amtTax = (rateThreshold * 0.26) + ((finalAMTI - rateThreshold) * 0.28);
+    }
+    
+    // Add capital gains tax (same treatment as regular tax)
+    const totalAMTTax = amtTax + capitalGainsTax;
+    
+    // ===== FINAL CALCULATION =====
+    
+    // You pay the HIGHER of regular tax or AMT
+    const additionalTaxOwed = Math.max(0, totalAMTTax - totalRegularTax);
+    const totalTaxOwed = Math.max(totalRegularTax, totalAMTTax);
+    
+    // Calculate effective rate
+    const totalEconomicIncome = ordinaryIncome + data.capitalGainsLongTerm + isoSpread;
+    const effectiveTaxRate = totalEconomicIncome > 0 
+      ? (totalTaxOwed / totalEconomicIncome) * 100 
+      : 0;
 
     return {
-      // Basic metrics
-      nua,
-      fmvAtSale,
-      appreciationAfterDistribution,
+      // Main Results
+      regularTax: totalRegularTax,
+      amtTax: totalAMTTax,
+      additionalTaxOwed,
+      totalTaxOwed,
+      isoSpread,
+      effectiveTaxRate,
+      
+      // Detailed Breakdowns
+      regularTaxBreakdown: [
+        { label: 'Ordinary Income', value: ordinaryIncome, format: 'currency' },
+        { label: 'Less: Total Deductions', value: -totalDeductions, format: 'currency' },
+        { label: 'Taxable Income (Line 15, Form 1040)', value: regularTaxableIncome, format: 'currency' },
+        { label: 'Tax on Taxable Income', value: regularTax, format: 'currency' },
+        { label: 'Long-Term Capital Gains (15%)', value: data.capitalGainsLongTerm, format: 'currency' },
+        { label: 'Capital Gains Tax', value: capitalGainsTax, format: 'currency' },
+        { label: 'Total Regular Tax', value: totalRegularTax, format: 'currency' }
+      ],
+      
+      amtBreakdown: [
+        { label: '1. Start: Taxable Income', value: regularTaxableIncome, format: 'currency' },
+        { label: '2. Add: SALT Taxes', value: data.saltDeduction, format: 'currency' },
+        { label: '3. Add: ISO Spread', value: isoSpread, format: 'currency' },
+        { label: '4. Add: Standard Deduction (if used)', value: useStandardDeduction ? standardDeduction : 0, format: 'currency' },
+        { label: '5. Alternative Min. Taxable Income (AMTI)', value: amti, format: 'currency' },
+        { label: '6. AMTI for Exemption Calc', value: amtiForExemption, format: 'currency' },
+        { label: '7. Less: AMT Exemption', value: -exemptionAmount, format: 'currency' },
+        { label: '8. Final AMTI', value: finalAMTI, format: 'currency' },
+        { label: '9. AMT Tax (26%/28%)', value: amtTax, format: 'currency' },
+        { label: '10. Capital Gains Tax (15%)', value: capitalGainsTax, format: 'currency' },
+        { label: 'Total AMT', value: totalAMTTax, format: 'currency' }
+      ],
 
-      // NUA Strategy breakdown
-      nuaInitialTax,
-      nuaInitialPenalty,
-      nuaTotalInitialTax,
-      nuaPortionTaxAtSale,
-      appreciationTaxAtSale,
-      nuaTotalFutureTax,
-      nuaTotalTax,
-      nuaNetProceeds,
-      pvNuaFutureTax,
-      pvNuaTotalTax,
-      pvNuaNetProceeds,
-
-      // IRA Rollover breakdown
-      iraTotalTaxAtSale,
-      iraPenaltyAtSale,
-      iraTotalTaxWithPenalty,
-      iraNetProceeds,
-      pvIraTax,
-      pvIraNetProceeds,
-
-      // Comparison
-      advantage,
-      advantagePercent,
-      pvAdvantage,
-      pvAdvantagePercent,
-      betterStrategy,
-
-      // Detailed breakdown for display
       breakdown: [
-        { label: 'NUA Amount', value: nua, format: 'currency' },
-        { label: 'Cost Basis', value: data.costBasis, format: 'currency' },
-        { label: 'Initial Distribution FMV', value: data.balanceAtDistribution, format: 'currency' },
-        { label: 'Projected FMV at Sale', value: fmvAtSale, format: 'currency' },
-        { label: 'Post-Distribution Appreciation', value: appreciationAfterDistribution, format: 'currency' },
+        { label: 'ISO Shares Exercised', value: data.sharesExercised, format: 'number' },
+        { label: 'Strike Price', value: data.strikePrice, format: 'currency' },
+        { label: '409A Fair Market Value', value: data.fmv409a, format: 'currency' },
+        { label: 'Spread Per Share', value: data.fmv409a - data.strikePrice, format: 'currency' },
+        { label: 'Total ISO Spread', value: isoSpread, format: 'currency' },
       ],
 
-      nuaBreakdown: [
-        { label: 'Tax on Cost Basis (Ordinary Income)', value: nuaInitialTax, format: 'currency' },
-        { label: 'Penalty on Cost Basis (if applicable)', value: nuaInitialPenalty, format: 'currency' },
-        { label: 'Total Initial Tax', value: nuaTotalInitialTax, format: 'currency' },
-        { label: 'Tax on NUA (Capital Gains)', value: nuaPortionTaxAtSale, format: 'currency' },
-        { label: 'Tax on Appreciation (At Sale)', value: appreciationTaxAtSale, format: 'currency' },
-        { label: 'Total Future Tax', value: nuaTotalFutureTax, format: 'currency' },
-        { label: 'Total Tax (All)', value: nuaTotalTax, format: 'currency' },
-        { label: 'Net Proceeds (Future Value)', value: nuaNetProceeds, format: 'currency' },
-      ],
-
-      iraBreakdown: [
-        { label: 'Tax on Full Amount (Ordinary Income)', value: iraTotalTaxAtSale, format: 'currency' },
-        { label: 'Early Withdrawal Penalty (if applicable)', value: iraPenaltyAtSale, format: 'currency' },
-        { label: 'Total Tax', value: iraTotalTaxWithPenalty, format: 'currency' },
-        { label: 'Net Proceeds (Future Value)', value: iraNetProceeds, format: 'currency' },
-      ],
-
-      // Notes (human friendly)
       notes: [
-        `Holding period: ${data.holdingPeriodYears} years and ${data.holdingPeriodMonths} months`,
-        penaltyOnRetirementDist ? 'Early withdrawal penalty (10%) applied to NUA initial distribution (cost basis)' : 'No early withdrawal penalty on NUA initial distribution',
-        penaltyOnIraDist ? 'Early withdrawal penalty (10%) will apply to IRA distribution' : 'No early withdrawal penalty on IRA distribution',
-        `NUA portion is treated as long-term capital gain (taxed at ${data.capitalGainsRate}%).`,
-        holdingYears < 1
-          ? 'Appreciation after distribution will be taxed as ordinary income (short-term) because holding period is under 1 year.'
-          : 'Appreciation after distribution will be taxed as long-term capital gain because holding period is at least 1 year.',
-        `The ${betterStrategy} provides ${Math.abs(pvAdvantagePercent).toFixed(2)}% ${pvAdvantage > 0 ? 'more' : 'less'} net proceeds on a present-value basis.`,
-      ],
+        `You exercised ${data.sharesExercised.toLocaleString()} ISO shares`,
+        `ISO spread (bargain element): ${formatCurrency(isoSpread)}`,
+        totalAMTTax > totalRegularTax 
+          ? `⚠️ AMT applies - You owe an additional ${formatCurrency(additionalTaxOwed)} in taxes`
+          : `✓ AMT does not apply - Your regular tax is higher`,
+        `Filing status: ${getFilingStatusLabel(filingStatus)}`,
+        `Effective tax rate: ${effectiveTaxRate.toFixed(2)}%`,
+        'This is an estimate for planning purposes only. Consult a tax professional for accuracy.'
+      ]
     };
   },
 
   charts: [
     {
-      title: 'Strategy Comparison: Net Proceeds',
+      title: 'Tax System Comparison',
       type: 'bar',
       height: 350,
-      xKey: 'strategy',
+      xKey: 'system',
       format: 'currency',
       showLegend: false,
       data: (results) => [
-        { 
-          strategy: 'NUA Strategy', 
-          value: results.nuaNetProceeds,
-          color: '#378CE7'
+        {
+          system: 'Regular Tax',
+          value: results.regularTax,
         },
-        { 
-          strategy: 'IRA Rollover', 
-          value: results.iraNetProceeds,
-          color: '#245383'
+        {
+          system: 'AMT',
+          value: results.amtTax,
         },
+        {
+          system: 'You Owe',
+          value: results.totalTaxOwed,
+        }
       ],
       bars: [
-        { key: 'value', name: 'Net Proceeds', color: '#378CE7' }
+        { key: 'value', name: 'Tax Amount', color: '#3B82F6' }
       ],
-      description: 'Future value comparison of net proceeds after all taxes'
+      description: 'Comparison of tax calculations - you pay the higher amount'
     },
     {
-      title: 'Total Tax Comparison',
+      title: 'ISO Exercise Impact',
       type: 'bar',
       height: 350,
-      xKey: 'strategy',
+      xKey: 'component',
       format: 'currency',
       showLegend: false,
       data: (results) => [
-        { 
-          strategy: 'NUA Strategy', 
-          value: results.nuaTotalTax,
-          color: '#F87171'
+        {
+          component: 'ISO Spread',
+          value: results.isoSpread,
         },
-        { 
-          strategy: 'IRA Rollover', 
-          value: results.iraTotalTaxWithPenalty,
-          color: '#DC2626'
-        },
+        {
+          component: 'Additional AMT',
+          value: results.additionalTaxOwed,
+        }
       ],
       bars: [
-        { key: 'value', name: 'Total Tax', color: '#F87171' }
+        { key: 'value', name: 'Amount', color: '#F59E0B' }
       ],
-      description: 'Total tax liability for each strategy'
-    },
-    {
-      title: 'Present Value Comparison',
-      type: 'bar',
-      height: 350,
-      xKey: 'strategy',
-      format: 'currency',
-      showLegend: false,
-      data: (results) => [
-        { 
-          strategy: 'NUA Strategy', 
-          value: results.pvNuaNetProceeds,
-          color: '#378CE7'
-        },
-        { 
-          strategy: 'IRA Rollover', 
-          value: results.pvIraNetProceeds,
-          color: '#245383'
-        },
-      ],
-      bars: [
-        { key: 'value', name: 'Present Value Net Proceeds', color: '#378CE7' }
-      ],
-      description: `Net proceeds adjusted for ${defaults.inflationRate}% inflation rate`
-    },
+      description: 'How your ISO exercise affects your taxes'
+    }
   ]
 };
+
+// Helper function to calculate tax from brackets
+function calculateTaxFromBrackets(income, brackets) {
+  let tax = 0;
+  let previousLimit = 0;
+
+  for (const bracket of brackets) {
+    if (income <= previousLimit) break;
+    
+    const taxableInBracket = Math.min(income, bracket.limit) - previousLimit;
+    tax += taxableInBracket * bracket.rate;
+    
+    previousLimit = bracket.limit;
+    if (income <= bracket.limit) break;
+  }
+
+  return tax;
+}
+
+// Helper function to format currency
+function formatCurrency(value) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+// Helper function to get filing status label
+function getFilingStatusLabel(status) {
+  const labels = {
+    single: 'Single',
+    married: 'Married Filing Jointly',
+    marriedSeparate: 'Married Filing Separately',
+    headOfHousehold: 'Head of Household'
+  };
+  return labels[status] || status;
+}

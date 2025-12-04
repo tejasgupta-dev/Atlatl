@@ -1,100 +1,117 @@
 export const inputs = [
-  { 
-    name: 'balanceAtDistribution', 
-    label: 'Balance at Time of Distribution (FMV)', 
+  // ------------------------------
+  // Personal Information
+  // ------------------------------
+  {
+    name: 'filingStatus',
+    label: 'Filing Status',
+    type: 'select',
+    options: [
+      { value: 'single', label: 'Single' },
+      { value: 'married', label: 'Married Filing Jointly' },
+      { value: 'marriedSeparate', label: 'Married Filing Separately' },
+      { value: 'headOfHousehold', label: 'Head of Household' }
+    ],
+    required: true,
+    section: 'Personal Information',
+    hint: 'Your tax filing status'
+  },
+  {
+    name: 'annualIncome',
+    label: 'Annual Income (Wages)',
     type: 'number',
     format: 'currency',
-    required: true, 
-    hint: 'Fair market value of company stock to be distributed' 
+    required: true,
+    section: 'Personal Information',
+    hint: 'Your total wages and salary for the year'
   },
-  { 
-    name: 'costBasis', 
-    label: 'Total Stock Purchases (Cost Basis)', 
+
+  // ------------------------------
+  // ISO Exercise Information
+  // ------------------------------
+  {
+    name: 'sharesExercised',
+    label: 'Number of ISO Shares Exercised',
+    type: 'number',
+    required: true,
+    section: 'ISO Exercise Information',
+    hint: 'Total ISO shares you exercised and held this year'
+  },
+  {
+    name: 'strikePrice',
+    label: 'Strike Price (per share)',
     type: 'number',
     format: 'currency',
-    required: true, 
-    hint: 'Total amount paid for the stock (you and/or employer contributions)' 
-  },
-  { 
-    name: 'rateOfReturn', 
-    label: 'Rate of Return', 
-    type: 'number',
-    format: 'percentage',
-    step: 0.1, 
-    hint: 'Expected annual return on company stock' 
-  },
-  { 
-    name: 'holdingPeriodYears', 
-    label: 'Holding Period (Years)', 
-    type: 'number',
+    step: 0.01,
     required: true,
-    hint: 'Years you expect to hold the stock after distribution' 
+    section: 'ISO Exercise Information',
+    hint: 'The exercise price you paid per share'
   },
-  { 
-    name: 'holdingPeriodMonths', 
-    label: 'Holding Period (Additional Months)', 
+  {
+    name: 'fmv409a',
+    label: '409A Fair Market Value (per share)',
     type: 'number',
-    hint: 'Additional months beyond full years (0-11)' 
-  },
-  { 
-    name: 'capitalGainsRate', 
-    label: 'Capital Gains Tax Rate', 
-    type: 'number',
-    format: 'percentage',
-    step: 0.1, 
-    hint: 'Long-term capital gains tax rate (typically 0%, 15%, or 20%)' 
-  },
-  { 
-    name: 'marginalTaxRate', 
-    label: 'Marginal Income Tax Rate', 
-    type: 'number',
-    format: 'percentage',
-    step: 0.1, 
-    hint: 'Your ordinary income tax rate' 
-  },
-  { 
-    name: 'inflationRate', 
-    label: 'Expected Inflation Rate', 
-    type: 'number',
-    format: 'percentage',
-    step: 0.1,
-    hint: 'Long-term average inflation rate for present value calculations' 
-  },
-  { 
-    name: 'currentAge', 
-    label: 'Current Age', 
-    type: 'number',
+    format: 'currency',
+    step: 0.01,
     required: true,
-    hint: 'Your current age' 
+    section: 'ISO Exercise Information',
+    hint: 'Fair market value per share on exercise date'
   },
-  { 
-    name: 'separatedAtAge55', 
-    label: 'Separated from Service at Age 55 or Older', 
+
+  // ------------------------------
+  // Deductions
+  // ------------------------------
+  {
+    name: 'standardDeduction',
+    label: 'Use Standard Deduction',
     type: 'select',
     options: [
-      { value: false, label: 'No' },
-      { value: true, label: 'Yes' }
+      { value: true, label: 'Yes - Use Standard Deduction' },
+      { value: false, label: 'No - I will itemize deductions' }
     ],
-    hint: 'Check if you separated in/after the year you turned 55 (no 10% penalty)' 
+    section: 'Deductions',
+    hint: 'Most taxpayers use the standard deduction'
   },
-  { 
-    name: 'retirementDistributionAfter59Half', 
-    label: 'Retirement Plan Distribution at Age 59½ or Older', 
-    type: 'select',
-    options: [
-      { value: false, label: 'No' },
-      { value: true, label: 'Yes' }
-    ],
-    hint: 'Check if distribution occurs at/after age 59½ (no 10% penalty)' 
+  {
+    name: 'itemizedDeductions',
+    label: 'Total Itemized Deductions',
+    type: 'number',
+    format: 'currency',
+    section: 'Deductions',
+    hint: 'Your total itemized deductions (excluding SALT)',
+    disabled: (data) => {
+      const useStandard = typeof data.standardDeduction === 'string'
+        ? data.standardDeduction === 'true'
+        : Boolean(data.standardDeduction);
+      return useStandard;
+    }
   },
-  { 
-    name: 'iraDistributionAfter59Half', 
-    label: 'IRA Distribution at Age 59½ or Older', 
-    type: 'select',
-    options: [
-      { value: false, label: 'No' },
-      { value: true, label: 'Yes' }
-    ],
-    hint: 'Check if IRA distribution occurs at/after age 59½ (no 10% penalty)' 
+  {
+    name: 'saltDeduction',
+    label: 'SALT Deduction (State and Local Taxes)',
+    type: 'number',
+    format: 'currency',
+    section: 'Deductions',
+    hint: 'State and local tax deduction (capped at $10,000)'
+  },
+
+  // ------------------------------
+  // Other Income
+  // ------------------------------
+  {
+    name: 'capitalGainsLongTerm',
+    label: 'Long-Term Capital Gains',
+    type: 'number',
+    format: 'currency',
+    section: 'Other Income',
+    hint: 'Capital gains from assets held over 1 year'
+  },
+  {
+    name: 'capitalGainsShortTerm',
+    label: 'Short-Term Capital Gains',
+    type: 'number',
+    format: 'currency',
+    section: 'Other Income',
+    hint: 'Capital gains from assets held 1 year or less'
   },
 ];
