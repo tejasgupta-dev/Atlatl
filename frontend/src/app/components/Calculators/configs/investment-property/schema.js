@@ -1,16 +1,42 @@
 import { z } from 'zod';
 
 export const schema = z.object({
-  balanceAtDistribution: z.number().min(0, 'Must be 0 or greater'),
-  costBasis: z.number().min(0, 'Must be 0 or greater'),
-  rateOfReturn: z.number().min(-100, 'Must be -100% or greater').max(200, 'Must be 200% or less'),
-  holdingPeriodYears: z.number().min(0, 'Must be 0 or greater').max(50, 'Must be 50 years or less'),
-  holdingPeriodMonths: z.number().min(0, 'Must be 0 or greater').max(11, 'Must be 11 months or less'),
-  capitalGainsRate: z.number().min(0, 'Must be 0 or greater').max(100, 'Must be 100% or less'),
-  marginalTaxRate: z.number().min(0, 'Must be 0 or greater').max(100, 'Must be 100% or less'),
-  inflationRate: z.number().min(0, 'Must be 0 or greater').max(100, 'Must be 100% or less'),
-  currentAge: z.number().min(0, 'Must be 0 or greater').max(120, 'Must be 120 or less'),
-  separatedAtAge55: z.boolean(),
-  retirementDistributionAfter59Half: z.boolean(),
-  iraDistributionAfter59Half: z.boolean(),
+  // Property Information
+  propertyAddress: z.string().optional(),
+  purchasePrice: z.number().min(0).max(100000000, 'Must be between $0 and $100,000,000'),
+  cashInvested: z.number().min(0).max(100000000, 'Must be between $0 and $100,000,000'),
+  landValue: z.number().min(0).max(100000000, 'Must be between $0 and $100,000,000'),
+  personalProperty: z.number().min(0).max(100000000, 'Must be between $0 and $100,000,000'),
+  annualRent: z.number().min(0).max(100000000, 'Must be between $0 and $100,000,000'),
+  vacancy: z.number().min(0).max(100000000, 'Must be between $0 and $100,000,000'),
+  personalPropertyDepRate: z.number().min(0).max(100, 'Must be between 0% and 100%'),
+  buildingDepRate: z.number().min(0).max(100, 'Must be between 0% and 100%'),
+  
+  // Financing - Loan 1
+  loan1Amount: z.number().min(0).max(100000000, 'Must be between $0 and $100,000,000'),
+  interestRate1: z.number().min(0).max(50, 'Must be between 0% and 50%'),
+  termInMonths1: z.number().int().min(0).max(360, 'Must be between 0 and 360'),
+  interestOnly1: z.boolean().optional(),
+  
+  // Financing - Loan 2
+  loan2Amount: z.number().min(0).max(100000000, 'Must be between $0 and $100,000,000'),
+  interestRate2: z.number().min(0).max(50, 'Must be between 0% and 50%'),
+  termInMonths2: z.number().int().min(0).max(360, 'Must be between 0 and 360'),
+  interestOnly2: z.boolean().optional(),
+  
+  // Annual Expenses
+  realEstateTaxes: z.number().min(0).max(1000000, 'Must be between $0 and $1,000,000'),
+  utilities: z.number().min(0).max(10000000, 'Must be between $0 and $10,000,000'),
+  insurance: z.number().min(0).max(10000000, 'Must be between $0 and $10,000,000'),
+  maintenanceRepairs: z.number().min(0).max(10000000, 'Must be between $0 and $10,000,000'),
+  advertising: z.number().min(0).max(10000000, 'Must be between $0 and $10,000,000'),
+  adminLegal: z.number().min(0).max(10000000, 'Must be between $0 and $10,000,000'),
+  supplies: z.number().min(0).max(10000000, 'Must be between $0 and $10,000,000'),
+  propertyMgmtExpense: z.number().min(0).max(10, 'Must be between 0% and 10%'),
+  miscellaneous: z.number().min(0).max(10000000, 'Must be between $0 and $10,000,000'),
+  
+  // Analysis
+  taxBracket: z.number().min(0).max(100, 'Must be between 0% and 100%'),
+  appreciationRate: z.number().min(0).max(33, 'Must be between 0% and 33%'),
+  costOfCapital: z.number().min(0).max(100, 'Must be between 0% and 100%'),
 });

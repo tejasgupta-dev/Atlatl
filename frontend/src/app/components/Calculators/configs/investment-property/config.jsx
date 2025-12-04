@@ -4,242 +4,355 @@ import { inputs } from './inputs';
 import { results } from './results';
 
 export const config = {
-  title: 'Company Stock Distribution Analysis Calculator',
-  description: 'Compare NUA (Net Unrealized Appreciation) strategy versus IRA rollover for company stock distributions from your retirement plan',
+  title: 'Investment Property Calculator',
+  description: 'Examine the potential return you might receive from an investment property',
   schema,
   defaultValues: defaults,
   inputs,
   results,
 
   calculate: (data) => {
-    /*
-    Dinkytown-style implementation:
-     - NUA = FMV at distribution - cost basis
-     - At distribution (NUA strategy): pay ordinary income tax on cost basis now (and 10% penalty on cost basis if not qualified)
-     - NUA portion is taxed as long-term capital gain when sold (even if sold immediately)
-     - Appreciation AFTER distribution: taxed as short-term (ordinary) if sold within 1 year, otherwise long-term capital gain
-     - IRA rollover: entire amount taxed as ordinary income when withdrawn (plus 10% penalty if applicable)
-     - Present value calculations: discount FUTURE taxes to present using inflationRate
-    */
+    const round2 = (x) => Math.round(x * 100) / 100;
+    const round4 = (x) => Math.round(x * 10000) / 10000;
 
-    const nua = data.balanceAtDistribution - data.costBasis;
-
-    // Convert holding period to decimal years
-    const holdingYears = data.holdingPeriodYears + (data.holdingPeriodMonths || 0) / 12;
-
-    // Future FMV after holding period (applies equally for both strategies)
-    const fmvAtSale = data.balanceAtDistribution * Math.pow(1 + data.rateOfReturn / 100, holdingYears);
-
-    // Appreciation that occurs AFTER the distribution event
-    const appreciationAfterDistribution = fmvAtSale - data.balanceAtDistribution;
-
-    // Penalty conditions:
-    // For cost-basis taxation at distribution (NUA initial tax), penalty applies unless separatedAtAge55 OR distribution is at/after 59.5
-    const penaltyOnRetirementDist = !(data.separatedAtAge55 || data.retirementDistributionAfter59Half);
-    // For IRA distributions (rolled-over funds), penalty applies if IRA distribution occurs before 59.5
-    const penaltyOnIraDist = !data.iraDistributionAfter59Half;
-
-    // ===== NUA STRATEGY =====
-    // Initial tax at distribution: cost basis taxed at ordinary marginal tax rate now
-    const nuaInitialTax = data.costBasis * (data.marginalTaxRate / 100);
-    const nuaInitialPenalty = penaltyOnRetirementDist ? data.costBasis * 0.10 : 0;
-    const nuaTotalInitialTax = nuaInitialTax + nuaInitialPenalty;
-
-    // Future taxes when stock is sold:
-    // - NUA portion taxed at long-term capital gains rate (per Dinkytown: treated as long-term cap gain even if sold immediately)
-    const nuaPortionTaxAtSale = Math.max(0, nua) * (data.capitalGainsRate / 100);
-
-    // - Appreciation after distribution taxed as:
-    //     * ordinary income (marginal tax rate) if holding < 1 year
-    //     * long-term capital gains if holding >= 1 year
-    const appreciationTaxRate = holdingYears >= 1 ? (data.capitalGainsRate / 100) : (data.marginalTaxRate / 100);
-    const appreciationTaxAtSale = Math.max(0, appreciationAfterDistribution) * appreciationTaxRate;
-
-    const nuaTotalFutureTax = nuaPortionTaxAtSale + appreciationTaxAtSale;
-
-    // Total taxes (initial + future)
-    const nuaTotalTax = nuaTotalInitialTax + nuaTotalFutureTax;
-
-    // Net proceeds at sale (future value basis): FMV at sale minus ALL taxes paid (initial taxes were paid now, but for "future value" comparison we subtract all taxes)
-    const nuaNetProceeds = fmvAtSale - nuaTotalFutureTax - nuaTotalInitialTax; // taxes already removed
-
-    // Present value calculations:
-    // Discount only FUTURE taxes to present using inflationRate (per Dinkytown: discount future tax distributions).
-    const discountRate = data.inflationRate / 100;
-    const pvNuaFutureTax = nuaTotalFutureTax / Math.pow(1 + discountRate, holdingYears);
-    const pvNuaTotalTax = nuaTotalInitialTax + pvNuaFutureTax; // initial tax is "now" (no discount)
-    const pvNuaNetProceeds = data.balanceAtDistribution - pvNuaTotalTax;
-
-    // ===== IRA ROLLOVER STRATEGY =====
-    // If rolled over to IRA, the whole balance grows and when withdrawn later it's taxed as ordinary income (marginal)
-    const iraFmvAtSale = fmvAtSale;
-    const iraTotalTaxAtSale = iraFmvAtSale * (data.marginalTaxRate / 100);
-    const iraPenaltyAtSale = penaltyOnIraDist ? iraFmvAtSale * 0.10 : 0;
-    const iraTotalTaxWithPenalty = iraTotalTaxAtSale + iraPenaltyAtSale;
-
-    const iraNetProceeds = iraFmvAtSale - iraTotalTaxWithPenalty;
-
-    // Present value for IRA: discount future tax (all taxed at withdrawal) to present
-    const pvIraTax = iraTotalTaxWithPenalty / Math.pow(1 + discountRate, holdingYears);
-    const pvIraNetProceeds = data.balanceAtDistribution - pvIraTax;
-
-    // ===== Comparison & summary metrics =====
-    const advantage = nuaNetProceeds - iraNetProceeds;
-    const advantagePercent = iraNetProceeds !== 0 ? (advantage / Math.abs(iraNetProceeds)) * 100 : 0;
-
-    const pvAdvantage = pvNuaNetProceeds - pvIraNetProceeds;
-    const pvAdvantagePercent = pvIraNetProceeds !== 0 ? (pvAdvantage / Math.abs(pvIraNetProceeds)) * 100 : 0;
-
-    // Recommendation: compare present-value advantage (gives 'today' basis)
-    const betterStrategy = pvAdvantage > 0 ? 'NUA Strategy' : 'IRA Rollover';
+    // ===== INPUTS =====
+    const purchasePrice = Number(data.purchasePrice) || 0;
+    const cashInvested = Number(data.cashInvested) || 0;
+    const landValue = Number(data.landValue) || 0;
+    const personalProperty = Number(data.personalProperty) || 0;
+    const buildingValue = purchasePrice - landValue;
+    
+    const annualRent = Number(data.annualRent) || 0;
+    const vacancy = Number(data.vacancy) || 0;
+    const personalPropertyDepRate = (Number(data.personalPropertyDepRate) || 0) / 100;
+    const buildingDepRate = (Number(data.buildingDepRate) || 0) / 100;
+    
+    // Loan 1
+    const loan1Amount = Number(data.loan1Amount) || 0;
+    const interestRate1 = (Number(data.interestRate1) || 0) / 100;
+    const termInMonths1 = Number(data.termInMonths1) || 0;
+    const interestOnly1 = Boolean(data.interestOnly1);
+    
+    // Loan 2
+    const loan2Amount = Number(data.loan2Amount) || 0;
+    const interestRate2 = (Number(data.interestRate2) || 0) / 100;
+    const termInMonths2 = Number(data.termInMonths2) || 0;
+    const interestOnly2 = Boolean(data.interestOnly2);
+    
+    // Annual Expenses
+    const realEstateTaxes = Number(data.realEstateTaxes) || 0;
+    const utilities = Number(data.utilities) || 0;
+    const insurance = Number(data.insurance) || 0;
+    const maintenanceRepairs = Number(data.maintenanceRepairs) || 0;
+    const advertising = Number(data.advertising) || 0;
+    const adminLegal = Number(data.adminLegal) || 0;
+    const supplies = Number(data.supplies) || 0;
+    const propertyMgmtExpense = (Number(data.propertyMgmtExpense) || 0) / 100;
+    const miscellaneous = Number(data.miscellaneous) || 0;
+    
+    // Analysis
+    const taxBracket = (Number(data.taxBracket) || 0) / 100;
+    const appreciationRate = (Number(data.appreciationRate) || 0) / 100;
+    const costOfCapital = (Number(data.costOfCapital) || 0) / 100;
+    
+    // ===== CALCULATIONS =====
+    
+    // Depreciation
+    const personalPropertyDepreciation = personalProperty * personalPropertyDepRate;
+    const buildingDepreciation = buildingValue * buildingDepRate;
+    const totalDepreciation = personalPropertyDepreciation + buildingDepreciation;
+    
+    // Calculate monthly payments for loans
+    const calculateMonthlyPayment = (principal, annualRate, months, isInterestOnly) => {
+      if (principal <= 0 || months <= 0) return 0;
+      if (isInterestOnly) {
+        return principal * (annualRate / 12);
+      }
+      if (annualRate === 0) {
+        return principal / months;
+      }
+      const monthlyRate = annualRate / 12;
+      return principal * (monthlyRate * Math.pow(1 + monthlyRate, months)) / 
+             (Math.pow(1 + monthlyRate, months) - 1);
+    };
+    
+    const principalAndInterest1 = calculateMonthlyPayment(loan1Amount, interestRate1, termInMonths1, interestOnly1);
+    const principalAndInterest2 = calculateMonthlyPayment(loan2Amount, interestRate2, termInMonths2, interestOnly2);
+    
+    // Annual debt service
+    const annualDebtService = (principalAndInterest1 + principalAndInterest2) * 12;
+    
+    // Calculate first year interest for both loans
+    const calculateFirstYearInterest = (principal, annualRate, monthlyPayment, months, isInterestOnly) => {
+      if (principal <= 0 || months <= 0) return 0;
+      if (isInterestOnly) {
+        return principal * annualRate;
+      }
+      let balance = principal;
+      let totalInterest = 0;
+      const monthlyRate = annualRate / 12;
+      const paymentsInYear = Math.min(12, months);
+      for (let i = 0; i < paymentsInYear; i++) {
+        const interest = balance * monthlyRate;
+        totalInterest += interest;
+        const principalPmt = monthlyPayment - interest;
+        balance = Math.max(0, balance - principalPmt);
+      }
+      return totalInterest;
+    };
+    
+    const firstYearInterest1 = calculateFirstYearInterest(loan1Amount, interestRate1, principalAndInterest1, termInMonths1, interestOnly1);
+    const firstYearInterest2 = calculateFirstYearInterest(loan2Amount, interestRate2, principalAndInterest2, termInMonths2, interestOnly2);
+    const totalFirstYearInterest = firstYearInterest1 + firstYearInterest2;
+    
+    // Calculate first year principal
+    const firstYearPrincipal = annualDebtService - totalFirstYearInterest;
+    
+    // Income calculations
+    const grossOperatingIncome = annualRent - vacancy;
+    const propertyMgmtExpenseAmount = grossOperatingIncome * propertyMgmtExpense;
+    
+    // Total operating expenses
+    const totalOperatingExpense = realEstateTaxes + utilities + insurance + 
+                                  maintenanceRepairs + advertising + adminLegal + 
+                                  supplies + propertyMgmtExpenseAmount + miscellaneous;
+    
+    // Operating expense ratio
+    const operatingExpenseRatio = grossOperatingIncome > 0 
+      ? (totalOperatingExpense / grossOperatingIncome) * 100 
+      : 0;
+    
+    // Net operating income
+    const netOperatingIncome = grossOperatingIncome - totalOperatingExpense;
+    
+    // Cash flow before tax
+    const cashFlowBeforeTax = netOperatingIncome - annualDebtService;
+    
+    // Taxable income
+    const taxableIncome = netOperatingIncome - totalFirstYearInterest - totalDepreciation;
+    const taxesPaid = taxableIncome * taxBracket;
+    
+    // Cash flow after tax
+    const cashFlowAfterTax = cashFlowBeforeTax - taxesPaid;
+    
+    // ===== RATIOS & RETURNS =====
+    
+    // Debt Service Ratio (as percentage)
+    const debtServiceRatio = annualDebtService > 0 
+      ? (netOperatingIncome / annualDebtService) * 100
+      : 0;
+    
+    // Cap Rate
+    const capRate = purchasePrice > 0 
+      ? (netOperatingIncome / purchasePrice) * 100 
+      : 0;
+    
+    // Cash on Cash Return
+    const cashOnCash = cashInvested > 0 
+      ? (cashFlowBeforeTax / cashInvested) * 100 
+      : 0;
+    
+    // ROI without appreciation
+    const roiWithoutAppreciation = cashInvested > 0 
+      ? ((cashFlowBeforeTax + firstYearPrincipal - taxesPaid) / cashInvested) * 100 
+      : 0;
+    
+    // ROI with appreciation
+    const appreciationAmount = purchasePrice * appreciationRate;
+    const roiWithAppreciation = cashInvested > 0 
+      ? ((cashFlowBeforeTax + firstYearPrincipal - taxesPaid + appreciationAmount) / cashInvested) * 100 
+      : 0;
 
     return {
-      // Basic metrics
-      nua,
-      fmvAtSale,
-      appreciationAfterDistribution,
-
-      // NUA Strategy breakdown
-      nuaInitialTax,
-      nuaInitialPenalty,
-      nuaTotalInitialTax,
-      nuaPortionTaxAtSale,
-      appreciationTaxAtSale,
-      nuaTotalFutureTax,
-      nuaTotalTax,
-      nuaNetProceeds,
-      pvNuaFutureTax,
-      pvNuaTotalTax,
-      pvNuaNetProceeds,
-
-      // IRA Rollover breakdown
-      iraTotalTaxAtSale,
-      iraPenaltyAtSale,
-      iraTotalTaxWithPenalty,
-      iraNetProceeds,
-      pvIraTax,
-      pvIraNetProceeds,
-
-      // Comparison
-      advantage,
-      advantagePercent,
-      pvAdvantage,
-      pvAdvantagePercent,
-      betterStrategy,
-
-      // Detailed breakdown for display
-      breakdown: [
-        { label: 'NUA Amount', value: nua, format: 'currency' },
-        { label: 'Cost Basis', value: data.costBasis, format: 'currency' },
-        { label: 'Initial Distribution FMV', value: data.balanceAtDistribution, format: 'currency' },
-        { label: 'Projected FMV at Sale', value: fmvAtSale, format: 'currency' },
-        { label: 'Post-Distribution Appreciation', value: appreciationAfterDistribution, format: 'currency' },
+      // Calculated property fields (readonly)
+      buildingValue: round2(buildingValue),
+      personalPropertyDepreciation: round2(personalPropertyDepreciation),
+      buildingDepreciation: round2(buildingDepreciation),
+      totalDepreciation: round2(totalDepreciation),
+      
+      // Loan payments (readonly)
+      principalAndInterest1: round2(principalAndInterest1),
+      principalAndInterest2: round2(principalAndInterest2),
+      
+      // Operating expenses (readonly)
+      totalOperatingExpense: round2(totalOperatingExpense),
+      operatingExpenseRatio: round2(operatingExpenseRatio),
+      
+      // Analysis results (readonly)
+      netOperatingIncome: round2(netOperatingIncome),
+      annualDebtService: round2(annualDebtService),
+      debtServiceRatio: round2(debtServiceRatio),
+      cashFlowBeforeTax: round2(cashFlowBeforeTax),
+      taxableIncome: round2(taxableIncome),
+      cashFlowAfterTax: round2(cashFlowAfterTax),
+      roiWithAppreciation: round2(roiWithAppreciation),
+      roiWithoutAppreciation: round2(roiWithoutAppreciation),
+      capRate: round2(capRate),
+      cashOnCash: round2(cashOnCash),
+      
+      // For breakdowns and internal use
+      firstYearInterest: round2(totalFirstYearInterest),
+      firstYearPrincipal: round2(firstYearPrincipal),
+      appreciationAmount: round2(appreciationAmount),
+      taxesPaid: round2(taxesPaid),
+      grossOperatingIncome: round2(grossOperatingIncome),
+      propertyMgmtExpenseAmount: round2(propertyMgmtExpenseAmount),
+      
+      // Breakdowns for display
+      propertyBreakdown: [
+        { label: 'Purchase Price', value: round2(purchasePrice) },
+        { label: 'Cash Invested', value: round2(cashInvested) },
+        { label: 'Land Value', value: round2(landValue) },
+        { label: 'Building Value', value: round2(buildingValue) },
+        { label: 'Personal Property', value: round2(personalProperty) },
       ],
-
-      nuaBreakdown: [
-        { label: 'Tax on Cost Basis (Ordinary Income)', value: nuaInitialTax, format: 'currency' },
-        { label: 'Penalty on Cost Basis (if applicable)', value: nuaInitialPenalty, format: 'currency' },
-        { label: 'Total Initial Tax', value: nuaTotalInitialTax, format: 'currency' },
-        { label: 'Tax on NUA (Capital Gains)', value: nuaPortionTaxAtSale, format: 'currency' },
-        { label: 'Tax on Appreciation (At Sale)', value: appreciationTaxAtSale, format: 'currency' },
-        { label: 'Total Future Tax', value: nuaTotalFutureTax, format: 'currency' },
-        { label: 'Total Tax (All)', value: nuaTotalTax, format: 'currency' },
-        { label: 'Net Proceeds (Future Value)', value: nuaNetProceeds, format: 'currency' },
+      
+      incomeBreakdown: [
+        { label: 'Annual Rent', value: round2(annualRent) },
+        { label: 'Less: Vacancy', value: round2(-vacancy) },
+        { label: 'Gross Operating Income', value: round2(grossOperatingIncome) },
       ],
-
-      iraBreakdown: [
-        { label: 'Tax on Full Amount (Ordinary Income)', value: iraTotalTaxAtSale, format: 'currency' },
-        { label: 'Early Withdrawal Penalty (if applicable)', value: iraPenaltyAtSale, format: 'currency' },
-        { label: 'Total Tax', value: iraTotalTaxWithPenalty, format: 'currency' },
-        { label: 'Net Proceeds (Future Value)', value: iraNetProceeds, format: 'currency' },
+      
+      expenseBreakdown: [
+        { label: 'Real Estate Taxes', value: round2(realEstateTaxes) },
+        { label: 'Utilities', value: round2(utilities) },
+        { label: 'Insurance', value: round2(insurance) },
+        { label: 'Maintenance/Repairs', value: round2(maintenanceRepairs) },
+        { label: 'Advertising', value: round2(advertising) },
+        { label: 'Admin/Legal', value: round2(adminLegal) },
+        { label: 'Supplies', value: round2(supplies) },
+        { label: 'Property Management', value: round2(propertyMgmtExpenseAmount) },
+        { label: 'Miscellaneous', value: round2(miscellaneous) },
+        { label: 'Total Operating Expense', value: round2(totalOperatingExpense) },
       ],
-
-      // Notes (human friendly)
-      notes: [
-        `Holding period: ${data.holdingPeriodYears} years and ${data.holdingPeriodMonths} months`,
-        penaltyOnRetirementDist ? 'Early withdrawal penalty (10%) applied to NUA initial distribution (cost basis)' : 'No early withdrawal penalty on NUA initial distribution',
-        penaltyOnIraDist ? 'Early withdrawal penalty (10%) will apply to IRA distribution' : 'No early withdrawal penalty on IRA distribution',
-        `NUA portion is treated as long-term capital gain (taxed at ${data.capitalGainsRate}%).`,
-        holdingYears < 1
-          ? 'Appreciation after distribution will be taxed as ordinary income (short-term) because holding period is under 1 year.'
-          : 'Appreciation after distribution will be taxed as long-term capital gain because holding period is at least 1 year.',
-        `The ${betterStrategy} provides ${Math.abs(pvAdvantagePercent).toFixed(2)}% ${pvAdvantage > 0 ? 'more' : 'less'} net proceeds on a present-value basis.`,
+      
+      cashFlowBreakdown: [
+        { label: 'Gross Operating Income', value: round2(grossOperatingIncome) },
+        { label: 'Less: Operating Expenses', value: round2(-totalOperatingExpense) },
+        { label: 'Net Operating Income', value: round2(netOperatingIncome) },
+        { label: 'Less: Annual Debt Service', value: round2(-annualDebtService) },
+        { label: 'Cash Flow Before Tax', value: round2(cashFlowBeforeTax) },
+        { label: 'Less: Taxes Paid', value: round2(-taxesPaid) },
+        { label: 'Cash Flow After Tax', value: round2(cashFlowAfterTax) },
+      ],
+      
+      returnBreakdown: [
+        { label: 'Cash Flow Before Tax', value: round2(cashFlowBeforeTax) },
+        { label: 'Plus: Principal Reduction', value: round2(firstYearPrincipal) },
+        { label: 'Less: Taxes Paid', value: round2(-taxesPaid) },
+        { label: 'ROI without Appreciation', value: `${round2(roiWithoutAppreciation)}%` },
+        { label: 'Plus: Appreciation', value: round2(appreciationAmount) },
+        { label: 'ROI with Appreciation', value: `${round2(roiWithAppreciation)}%` },
+      ],
+      
+      performanceMetrics: [
+        { label: 'Cap Rate', value: `${round2(capRate)}%`, description: 'Net operating income ÷ purchase price' },
+        { label: 'Cash on Cash', value: `${round2(cashOnCash)}%`, description: 'Cash flow before tax ÷ cash invested' },
+        { label: 'Debt Service Ratio', value: `${round2(debtServiceRatio)}%`, description: 'Net operating income ÷ annual debt service' },
+        { label: 'Operating Expense Ratio', value: `${round2(operatingExpenseRatio)}%`, description: 'Operating expenses ÷ gross operating income' },
       ],
     };
   },
 
   charts: [
     {
-      title: 'Strategy Comparison: Net Proceeds',
+      title: 'Income vs. Expenses',
       type: 'bar',
       height: 350,
-      xKey: 'strategy',
+      xKey: 'category',
       format: 'currency',
       showLegend: false,
       data: (results) => [
-        { 
-          strategy: 'NUA Strategy', 
-          value: results.nuaNetProceeds,
-          color: '#378CE7'
-        },
-        { 
-          strategy: 'IRA Rollover', 
-          value: results.iraNetProceeds,
-          color: '#245383'
-        },
+        { category: 'Gross Operating Income', value: results.grossOperatingIncome, color: '#10B981' },
+        { category: 'Operating Expenses', value: results.totalOperatingExpense, color: '#EF4444' },
+        { category: 'Net Operating Income', value: results.netOperatingIncome, color: '#3B82F6' },
       ],
       bars: [
-        { key: 'value', name: 'Net Proceeds', color: '#378CE7' }
+        { key: 'value', name: 'Amount', color: '#3B82F6' }
       ],
-      description: 'Future value comparison of net proceeds after all taxes'
+      description: 'Annual income and expense comparison'
     },
     {
-      title: 'Total Tax Comparison',
+      title: 'Monthly Loan Payments',
       type: 'bar',
       height: 350,
-      xKey: 'strategy',
+      xKey: 'loan',
       format: 'currency',
       showLegend: false,
-      data: (results) => [
-        { 
-          strategy: 'NUA Strategy', 
-          value: results.nuaTotalTax,
-          color: '#F87171'
-        },
-        { 
-          strategy: 'IRA Rollover', 
-          value: results.iraTotalTaxWithPenalty,
-          color: '#DC2626'
-        },
-      ],
+      data: (results) => {
+        const data = [];
+        if (results.principalAndInterest1 > 0) {
+          data.push({ loan: 'Loan 1', value: results.principalAndInterest1, color: '#3B82F6' });
+        }
+        if (results.principalAndInterest2 > 0) {
+          data.push({ loan: 'Loan 2', value: results.principalAndInterest2, color: '#8B5CF6' });
+        }
+        if (data.length === 0) {
+          data.push({ loan: 'No Loans', value: 0, color: '#9CA3AF' });
+        }
+        return data;
+      },
       bars: [
-        { key: 'value', name: 'Total Tax', color: '#F87171' }
+        { key: 'value', name: 'Monthly Payment', color: '#3B82F6' }
       ],
-      description: 'Total tax liability for each strategy'
+      description: 'Monthly principal and interest payments'
     },
     {
-      title: 'Present Value Comparison',
+      title: 'Return Components',
       type: 'bar',
       height: 350,
-      xKey: 'strategy',
+      xKey: 'component',
       format: 'currency',
       showLegend: false,
       data: (results) => [
-        { 
-          strategy: 'NUA Strategy', 
-          value: results.pvNuaNetProceeds,
-          color: '#378CE7'
-        },
-        { 
-          strategy: 'IRA Rollover', 
-          value: results.pvIraNetProceeds,
-          color: '#245383'
-        },
+        { component: 'Cash Flow', value: results.cashFlowBeforeTax, color: '#3B82F6' },
+        { component: 'Principal Reduction', value: results.firstYearPrincipal, color: '#10B981' },
+        { component: 'Appreciation', value: results.appreciationAmount, color: '#8B5CF6' },
       ],
       bars: [
-        { key: 'value', name: 'Present Value Net Proceeds', color: '#378CE7' }
+        { key: 'value', name: 'Amount', color: '#3B82F6' }
       ],
-      description: `Net proceeds adjusted for ${defaults.inflationRate}% inflation rate`
+      description: 'Components of total investment return'
+    },
+    {
+      title: 'Key Performance Metrics',
+      type: 'bar',
+      height: 350,
+      xKey: 'metric',
+      format: 'percentage',
+      showLegend: false,
+      data: (results) => [
+        { metric: 'Cap Rate', value: results.capRate, color: '#3B82F6' },
+        { metric: 'Cash on Cash', value: results.cashOnCash, color: '#10B981' },
+        { metric: 'ROI w/o Appreciation', value: results.roiWithoutAppreciation, color: '#F59E0B' },
+        { metric: 'ROI w/ Appreciation', value: results.roiWithAppreciation, color: '#8B5CF6' },
+      ],
+      bars: [
+        { key: 'value', name: 'Percentage', color: '#3B82F6' }
+      ],
+      description: 'Investment performance ratios'
+    },
+    {
+      title: 'Expense Breakdown',
+      type: 'bar',
+      height: 400,
+      xKey: 'expense',
+      format: 'currency',
+      showLegend: false,
+      data: (results) => {
+        const expenses = results.expenseBreakdown.filter(e => 
+          e.label !== 'Total Operating Expense' && e.value > 0
+        );
+        return expenses.map(e => ({
+          expense: e.label,
+          value: e.value,
+          color: '#EF4444'
+        }));
+      },
+      bars: [
+        { key: 'value', name: 'Amount', color: '#EF4444' }
+      ],
+      description: 'Annual operating expense breakdown'
     },
   ]
 };
