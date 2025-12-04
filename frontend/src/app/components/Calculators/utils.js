@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-
 // DATE UTILITIES
 
 export const parseDate = (dateStr) => {
@@ -17,13 +16,11 @@ export const calculateAge = (birthDate, referenceDate) => {
   return age;
 };
 
-
 // FINANCIAL UTILITIES
 
 export const roundCurrency = (amount) => {
   return Math.round(amount * 100) / 100;
 };
-
 
 // VALIDATION UTILITIES (Zod Schemas)
 
@@ -47,7 +44,6 @@ export const getDaysBetween = (startDateStr, endDateStr) => {
   const endDate = new Date(endDateStr);
   return Math.round((endDate - startDate) / (1000 * 60 * 60 * 24));
 };
-
 
 // NUMBER UTILITIES
 
