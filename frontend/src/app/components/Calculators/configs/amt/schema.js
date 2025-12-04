@@ -6,7 +6,7 @@ export const schema = z.object({
   annualIncome: z.number().min(0, 'Must be 0 or greater'),
   
   // ISO Exercise Information
-  sharesExercised: z.number().min(0, 'Must be 0 or greater'),
+  sharesExercised: z.number().int('Must be a whole number').min(0, 'Must be 0 or greater'),
   strikePrice: z.number().min(0, 'Must be 0 or greater'),
   fmv409a: z.number().min(0, 'Must be 0 or greater'),
   

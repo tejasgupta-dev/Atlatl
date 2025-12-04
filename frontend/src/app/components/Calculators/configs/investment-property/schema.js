@@ -9,19 +9,19 @@ export const schema = z.object({
   personalProperty: z.number().min(0).max(100000000, 'Must be between $0 and $100,000,000'),
   annualRent: z.number().min(0).max(100000000, 'Must be between $0 and $100,000,000'),
   vacancy: z.number().min(0).max(100000000, 'Must be between $0 and $100,000,000'),
-  personalPropertyDepRate: z.number().min(0).max(100, 'Must be between 0% and 100%'),
-  buildingDepRate: z.number().min(0).max(100, 'Must be between 0% and 100%'),
+  personalPropertyDepRate: z.number().min(0).max(50, 'Must be between 0% and 50%'),
+  buildingDepRate: z.number().min(0).max(10, 'Must be between 0% and 10%'),
   
   // Financing - Loan 1
   loan1Amount: z.number().min(0).max(100000000, 'Must be between $0 and $100,000,000'),
   interestRate1: z.number().min(0).max(100, 'Must be between 0% and 100%'),
-  termInMonths1: z.number().int().min(0).max(360, 'Must be between 0 and 360'),
+  termInMonths1: z.number().int('Must be a whole number').min(0).max(360, 'Must be between 0 and 360'),
   interestOnly1: z.coerce.boolean(),
   
   // Financing - Loan 2
   loan2Amount: z.number().min(0).max(100000000, 'Must be between $0 and $100,000,000'),
   interestRate2: z.number().min(0).max(100, 'Must be between 0% and 100%'),
-  termInMonths2: z.number().int().min(0).max(360, 'Must be between 0 and 360'),
+  termInMonths2: z.number().int('Must be a whole number').min(0).max(360, 'Must be between 0 and 360'),
   interestOnly2: z.coerce.boolean(),
   
   // Annual Expenses
@@ -39,4 +39,10 @@ export const schema = z.object({
   taxBracket: z.number().min(0).max(100, 'Must be between 0% and 100%'),
   appreciationRate: z.number().min(0).max(100, 'Must be between 0% and 100%'),
   costOfCapital: z.number().min(0).max(100, 'Must be between 0% and 100%'),
+}).refine((data) => {
+  const totalLoans = data.loan1Amount + data.loan2Amount;
+  return totalLoans <= data.purchasePrice;
+}, {
+  message: "Total loans cannot exceed purchase price",
+  path: ["loan1Amount"],
 });
