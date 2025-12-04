@@ -1,4 +1,5 @@
 import { getMediaComponent } from "@/lib/helper";
+import Link from "next/link";
 
 export default function Hero({ media }) {
   return (
@@ -16,17 +17,19 @@ export default function Hero({ media }) {
             eiusmod tempor incididunt ut labore et dolore magna aliqua.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4">
-            <button className="bg-bold-blue text-white font-bold py-3 px-8 shadow-md rounded-full
+            <Link 
+              href="/services" className="bg-bold-blue text-white py-3 px-8 shadow-md rounded-full
                 hover:bg-white hover:text-bold-blue hover:shadow-[0_0px_15px_-3px_rgba(0,0,0,0.3)] 
                 transition-all duration-300 transform hover:-translate-y-0.5 hover:cursor-pointer">
               Explore Services
-            </button>
-            <button className="bg-white text-bold-blue font-bold py-3 px-8 rshadow-md rounded-full border-2 border-bold-blue
+            </Link>
+            <Link href="/contact-us" 
+              className="bg-white text-bold-blue py-3 px-8 rshadow-md rounded-full border-2 border-bold-blue
                 hover:bg-bold-blue hover:text-white hover:shadow-xl 
                 transition-all duration-300 transform hover:-translate-y-0.5 hover:cursor-pointer
                 ">
                Schedule a Call
-            </button>
+            </Link>
           </div>
         </div>
 

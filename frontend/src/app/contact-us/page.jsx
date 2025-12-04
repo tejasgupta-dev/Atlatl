@@ -1,5 +1,6 @@
 import ContactForm from "@/app/components/contact/ContactForm";
 import CtaSection from "@/app/components/homepage/CtaSection";
+import Link from "next/link";
 
 // Google Maps
 const mapContainerStyle = { width: "100%", height: "100%", borderRadius: "20px" };
@@ -32,11 +33,11 @@ export default function ContactUsPage() {
               </p>
             </div>
 
-            <button className="bg-bold-blue text-white font-bold py-3 px-8 shadow-md rounded-full uppercase font-songer
+            <Link href="/contact-us" className="bg-bold-blue text-white font-bold py-3 px-8 shadow-md rounded-full uppercase font-songer
                 hover:bg-white hover:text-bold-blue hover:shadow-[0_0px_15px_-3px_rgba(0,0,0,0.3)] 
                 transition-all duration-300 transform hover:-translate-y-0.5 hover:cursor-pointer">
               Schedule a Call
-            </button>
+            </Link>
           </div>
 
           {/* --- RIGHT COLUMN: FORM --- */}

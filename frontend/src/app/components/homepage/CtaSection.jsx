@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function CtaSection() {
   return (
     <div className="py-16 md:py-24 relative bg-white">
@@ -21,11 +23,11 @@ export default function CtaSection() {
         <p className="text-lg md:text-xl text-dark-blue mb-10 text-center text-balance max-w-2xl">
           LET'S BUILD YOUR PLAN TOGETHER.
         </p>
-        <button className="bg-bold-blue text-white font-bold py-3 px-8 rounded-lg shadow-md hover:bg-white hover:text-bold-blue
+        <Link href="/contact-us" className="bg-bold-blue text-white py-3 px-8 rounded-lg shadow-md hover:bg-white hover:text-bold-blue
           hover:shadow-[0_0px_15px_-3px_rgba(0,0,0,0.3)]  transition-all duration-300
           transform hover:-translate-y-0.5 hover:cursor-pointer">
-          SCHEDULE A CALL NOW
-        </button>
+            SCHEDULE A CALL NOW
+        </Link>
       </div>
 
       {/* Arrow Image - Positioned absolutely in the bottom left */}

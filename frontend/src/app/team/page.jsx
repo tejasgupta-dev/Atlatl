@@ -1,8 +1,8 @@
-import { getFeaturedTeamMembers } from "@/lib/strapi";
+import { getTeamMembers } from "@/lib/strapi";
 import { getFullMediaUrl } from "@/lib/helper";
 import Link from "next/link";
 export default async function HomeTeam() {
-  const teamMembers = await getFeaturedTeamMembers(false);
+  const teamMembers = await getTeamMembers(false);
 
   return (
     <div className="flex flex-col items-center w-full py-12 lg:py-20 bg-white">

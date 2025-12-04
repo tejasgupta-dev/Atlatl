@@ -1,9 +1,9 @@
-import { getFeaturedTeamMembers } from "@/lib/strapi";
+import { getTeamMembers } from "@/lib/strapi";
 import { getFullMediaUrl } from "@/lib/helper";
 import Link from "next/link";
 
 export default async function HomeTeam({ half_toggle = true }) {
-  const teamMembers = await getFeaturedTeamMembers();
+  const teamMembers = await getTeamMembers();
 
   return (
     <div className="flex flex-col items-center w-full">
@@ -42,7 +42,7 @@ export default async function HomeTeam({ half_toggle = true }) {
         })}
       </div>
       
-      <Link href="/team" className="font-songer bg-bold-blue text-white font-bold py-3 px-8 mt-8 shadow-md rounded-full
+      <Link href="/team" className="font-songer bg-bold-blue text-white py-3 px-8 mt-8 shadow-md rounded-full
           hover:bg-white hover:text-bold-blue hover:shadow-[0_0px_15px_-3px_rgba(0,0,0,0.3)] 
           transition-all duration-300 transform hover:-translate-y-0.5 hover:cursor-pointer">
           VIEW MORE TEAM MEMBERS

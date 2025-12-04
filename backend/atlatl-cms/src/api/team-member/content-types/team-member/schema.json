@@ -40,6 +40,21 @@
       "required": true,
       "default": false
     },
+    "featured_order": {
+      "type": "integer",
+      "conditions": {
+        "visible": {
+          "==": [
+            {
+              "var": "featured"
+            },
+            true
+          ]
+        }
+      },
+      "required": true,
+      "min": 0
+    },
     "suffix": {
       "type": "string"
     },
