@@ -36,7 +36,7 @@ export const AutoChart = ({ config, results }) => {
 
     const formatAxisValue = (value, format = 'number') => {
         if (value === null || value === undefined) return '';
-        
+
         if (format === 'currency') {
             // Format large numbers more compactly for axis
             const absValue = Math.abs(value);
@@ -47,11 +47,11 @@ export const AutoChart = ({ config, results }) => {
             }
             return `$${value.toFixed(0)}`;
         }
-        
+
         if (format === 'percentage') {
             return `${value.toFixed(0)}%`;
         }
-        
+
         // Regular number formatting
         const absValue = Math.abs(value);
         if (absValue >= 1000000) {
@@ -209,10 +209,18 @@ export const AutoChart = ({ config, results }) => {
                                         dataKey={bar.key}
                                         fill={bar.color || colors[idx]}
                                         name={bar.name}
-                                    />
+                                    >
+                                        {data.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color || bar.color || colors[idx]} />
+                                        ))}
+                                    </Bar>
                                 ))
                             ) : (
-                                <Bar dataKey={config.valueKey} fill={colors[0]} />
+                                <Bar dataKey={config.valueKey} fill={colors[0]}>
+                                    {data.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.color || colors[index % colors.length]} />
+                                    ))}
+                                </Bar>
                             )}
                         </BarChart>
                     </ResponsiveContainer>
