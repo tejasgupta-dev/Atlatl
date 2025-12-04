@@ -18,7 +18,7 @@ export default function CtaSection() {
         <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-dark-blue leading-tight mb-4 text-center text-balance">
           READY TO TAKE THE NEXT STEP TOWARD YOUR FINANCIAL FUTURE?
         </h2>
-        <p className="text-lg md:text-xl text-dark-blue mb-10">
+        <p className="text-lg md:text-xl text-dark-blue mb-10 text-center text-balance max-w-2xl">
           LET'S BUILD YOUR PLAN TOGETHER.
         </p>
         <button className="bg-bold-blue text-white font-bold py-3 px-8 rounded-lg shadow-md hover:bg-white hover:text-bold-blue
