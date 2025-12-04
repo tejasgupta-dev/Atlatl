@@ -2,10 +2,14 @@ import { redirect } from 'next/navigation'
 import TabContent from "../components/service/TabContent";
 import { getServicepageContent } from "@/lib/strapi";
 import FaqSection from '../components/service/FaqSection';
+import { getFAQContent } from '@/lib/strapi';
 
 export default async function ServicesPage() {
   const services = await getServicepageContent();
-  if (!services || !services.serviceblock || services.serviceblock.length === 0) {
+  const faqs = await getFAQContent();
+
+  if (!services || !services.serviceblock || services.serviceblock.length === 0
+    || !faqs || !faqs.topics || faqs.topics.length === 0) {
     redirect('/maintenance');
   }
   const service_blocks = services.serviceblock;
@@ -23,7 +27,7 @@ export default async function ServicesPage() {
       </section>
 
       <section className="bg-white py-16 md:py-24">
-        <FaqSection />
+        <FaqSection faqBlocks={faqs.topics} />
       </section>
     </>
   )

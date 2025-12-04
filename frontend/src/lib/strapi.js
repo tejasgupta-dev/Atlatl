@@ -97,3 +97,17 @@ export async function getServicepageContent() {
   
   return json.data;
 }
+
+export async function getFAQContent() {
+  const path = "/api/faq";
+  const params = "?populate[0]=topics.questionblocks";
+  const options = { cache: "no-store" };
+
+  const json = await fetchStrapiData(path, params, options);
+  if (!json || !json.data) {
+    console.warn("No FAQ content found or API error.");
+    return null;
+  }
+  
+  return json.data;
+}

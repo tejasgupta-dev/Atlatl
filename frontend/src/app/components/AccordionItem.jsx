@@ -1,4 +1,5 @@
 import { FiPlusCircle } from "react-icons/fi";
+import Markdown from "./Markdown";
 
 export default function AccordionItem({ question, answer, isOpen, onClick }) {
   return (
@@ -32,13 +33,11 @@ export default function AccordionItem({ question, answer, isOpen, onClick }) {
       */}
       <div
         role="region"
-        className={`grid overflow-hidden transition-all duration-300 ease-in-out text-darker-bold-blue
+        className={`grid overflow-hidden transition-all duration-300 ease-in-out text-bold-blue
         ${isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
       >
-        <div className="overflow-hidden">
-          <p className="pb-6 text-lg leading-relaxed">
-            {answer}
-          </p>
+        <div className="overflow-hidden pb-6 text-lg leading-relaxed">
+          <Markdown>{answer}</Markdown>
         </div>
       </div>
     </div>

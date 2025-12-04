@@ -49,19 +49,14 @@ const faqData = {
   ]
 };
 
-export default function FaqSection() {
-  const [activeTab, setActiveTab] = useState("GENERAL"); //track active tab
+export default function FaqSection({ faqBlocks }) {
+  const [activeTab, setActiveTab] = useState(0); //track active tab
   const [openIndex, setOpenIndex] = useState(null); // track open accordion item
-
+  
   // Reset open accordion when tab changes
   useEffect(() => {
     setOpenIndex(null);
   }, [activeTab]);
-
-  const handleAccordionClick = (index) => {
-    // If clicking the one already open, close it (null). Otherwise open the new index.
-    setOpenIndex(openIndex === index ? null : index);
-  };
 
   return (
     <div className="container mx-auto px-10 lg:px-20">
@@ -80,34 +75,34 @@ export default function FaqSection() {
 
       {/* Tabs Navigation */}
       <div className="flex flex-wrap justify-center gap-x-6 md:gap-x-12 gap-y-4 mb-8 border-b border-gray-200 pb-1">
-        {Object.keys(faqData).map((category) => (
+        {faqBlocks.map((block, idx) => (
           <button
-            key={category}
-            onClick={() => setActiveTab(category)}
+            key={"faq_tab_" + idx}
+            onClick={() => setActiveTab(idx)}
             className={`font-songer text-lg font-bold uppercase pb-3 transition-all duration-300 relative
-              ${activeTab === category
+              ${activeTab === idx
                 ? 'text-bold-blue font-semibold'
                 : 'text-darker-bold-blue hover:text-black cursor-pointer'
               }`}
           >
-            {category}
+            {block.name}
             {/* Active Underline */}
             <span
               className={`absolute bottom-2.5 left-0 w-full h-[3px] bg-bold-blue transform transition-transform duration-300 origin-left
-              ${activeTab === category ? "scale-x-100" : "scale-x-0"}`}
+              ${activeTab === idx ? "scale-x-100" : "scale-x-0"}`}
             />
           </button>
         ))}
       </div>
       {/* Accordion List */}
       <div className="max-w-4xl mx-auto">
-        {faqData[activeTab].map((item, index) => (
+        {faqBlocks[activeTab].questionblocks.map((item, idx) => (
           <AccordionItem 
-            key={index}
+            key={"faq_item_" + faqBlocks[activeTab].name + "_" + idx}
             question={item.question}
             answer={item.answer}
-            isOpen={openIndex === index}
-            onClick={() => setOpenIndex(openIndex === index ? null : index)} // Toggle on click
+            isOpen={openIndex === idx}
+            onClick={() => setOpenIndex(openIndex === idx ? null : idx)} // Toggle on click
           />
         ))}
       </div>
