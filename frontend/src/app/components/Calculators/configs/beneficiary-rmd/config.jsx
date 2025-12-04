@@ -1,10 +1,123 @@
-import { schema } from './schema';
-import { defaults } from './defaults';
-import { inputs } from './inputs';
-import { results } from './results';
+import { z } from 'zod';
 import { singleLifeTable } from './singleLifeTable';
 import { uniformLifeTable } from './uniformLifeTable';
 
+// Schema validation
+export const schema = z.object({
+  yearOfRMD: z.number()
+    .int('Year must be a whole number')
+    .min(2020, 'Year must be 2020 or later')
+    .max(2100, 'Year too far in future'),
+  beneficiaryType: z.enum([
+    'longest-timeframe',
+    '10-year-rule',
+    'surviving-spouse',
+    'disabled-chronically-ill',
+    'child-under-21'
+  ]),
+  beneficiaryName: z.string().optional(),
+  ownerName: z.string().optional(),
+  accountName: z.string().optional(),
+  beneficiaryBirthdate: z.string()
+    .min(1, 'Beneficiary birthdate is required')
+    .refine(val => !isNaN(new Date(val + 'T00:00:00').getTime()), 'Invalid date - use MM/DD/YYYY format'),
+  rateOfReturn: z.number().min(-50, 'Rate too low').max(100, 'Rate too high'),
+  accountBalance: z.number().min(0, 'Balance must be positive'),
+  ownerDeathDate: z.string()
+    .min(1, 'Death date is required')
+    .refine(val => !isNaN(new Date(val + 'T00:00:00').getTime()), 'Invalid date - use MM/DD/YYYY format'),
+  planType: z.enum([
+    'traditional-ira',
+    'roth-ira',
+    'sep-ira',
+    'simple-ira',
+    '401k',
+    'roth-401k',
+    '403b',
+    '457',
+    'profit-sharing',
+    'money-purchase',
+    'defined-benefit',
+    'keogh',
+    'tsp',
+    'other'
+  ]),
+  ownerBirthdate: z.string()
+    .min(1, 'Owner birthdate is required')
+    .refine(val => !isNaN(new Date(val + 'T00:00:00').getTime()), 'Invalid date - use MM/DD/YYYY format'),
+});
+
+// Default values
+export const defaults = {
+  yearOfRMD: 2025,
+  beneficiaryType: 'longest-timeframe',
+  beneficiaryName: '',
+  ownerName: '',
+  accountName: '',
+  beneficiaryBirthdate: '1952-11-24',
+  rateOfReturn: 4,
+  accountBalance: 10000,
+  ownerDeathDate: '2024-11-24',
+  planType: 'traditional-ira',
+  ownerBirthdate: '1952-11-24',
+};
+
+// Input fields
+export const inputs = [
+  { name: 'yearOfRMD', label: 'Year of RMD', type: 'number', required: true, hint: 'The year to calculate the Required Minimum Distribution. This is typically the current year.' },
+  { name: 'beneficiaryType', label: 'Beneficiary Type', type: 'select', required: true, options: [
+      { value: 'longest-timeframe', label: 'Non-spouse choosing longest distribution time-frame' },
+      { value: '10-year-rule', label: 'Person choosing 10-year RMD rule (if available)' },
+      { value: 'surviving-spouse', label: 'Surviving spouse' },
+      { value: 'disabled-chronically-ill', label: 'Disabled or chronically ill person' },
+      { value: 'child-under-21', label: "Account owner's child" }
+    ] 
+  },
+  { name: 'beneficiaryName', label: "Beneficiary's Name", type: 'text', hint: 'Enter the beneficiary\'s name if you would like it to appear on the report' },
+  { name: 'ownerName', label: "Owner's Name", type: 'text', hint: 'Enter the account owner\'s name if you would like it to appear on the report' },
+  { name: 'accountName', label: 'Name of Account', type: 'text', hint: 'Please enter the name of the account for this analysis' },
+  { name: 'beneficiaryBirthdate', label: "Beneficiary's Birthdate", type: 'date', required: true, hint: 'Enter the beneficiary\'s birthdate. This is used for calculating life expectancy.' },
+  { name: 'rateOfReturn', label: 'Hypothetical Rate of Return', type: 'number', format: 'percentage', step: 0.1, required: true, hint: 'Expected annual growth rate for future projections' },
+  { name: 'accountBalance', label: 'Amount Subject to RMD', type: 'number', format: 'currency', required: true, hint: 'Fair market value as of December 31st of the previous year. For example, to determine the RMD for 2020 the account balance on 12/31/2019 would be used.' },
+  { name: 'ownerDeathDate', label: "Date of the Original Account Owner's Death", type: 'date', required: true, hint: 'Please enter the date of the original account owner\'s death' },
+  { name: 'planType', label: 'Plan Type', type: 'select', required: true, options: [
+      { value: 'traditional-ira', label: 'Traditional IRA' },
+      { value: 'roth-ira', label: 'Roth IRA' },
+      { value: 'sep-ira', label: 'SEP IRA' },
+      { value: 'simple-ira', label: 'SIMPLE IRA' },
+      { value: '401k', label: '401(k)' },
+      { value: 'roth-401k', label: 'Roth 401(k)' },
+      { value: '403b', label: '403(b)' },
+      { value: '457', label: '457 Plan' },
+      { value: 'profit-sharing', label: 'Profit Sharing Plan' },
+      { value: 'money-purchase', label: 'Money Purchase Pension Plan' },
+      { value: 'defined-benefit', label: 'Defined Benefit Plan' },
+      { value: 'keogh', label: 'Keogh Plan' },
+      { value: 'tsp', label: 'Thrift Savings Plan (TSP)' },
+      { value: 'other', label: 'Other Qualified Plan' }
+    ], hint: 'The plan type can affect distributions if the account owner is younger than the beneficiary and RMDs have already begun' 
+  },
+  { name: 'ownerBirthdate', label: "Original Account Owner's Birthdate", type: 'date', required: true, hint: 'Please enter the original account owner\'s birthdate' }
+];
+
+// Result fields
+export const results = [
+  { key: 'yearOfRMD', label: 'Year of RMD', format: 'text' },  
+  { key: 'calculationMethod', label: 'Calculation Method', format: 'text' },
+  { key: 'beneficiaryName', label: 'Beneficiary Name', format: 'text' },
+  { key: 'ownerName', label: 'Owner Name', format: 'text' },
+  { key: 'accountName', label: 'Account Name', format: 'text' },
+  { key: 'planType', label: 'Plan Type', format: 'text' },
+  { key: 'accountBalance', label: 'Account Balance (Dec 31 Prior Year)', format: 'currency' },
+  { key: 'beneficiaryAge', label: 'Beneficiary Age (Dec 31 of RMD Year)', format: 'number' },
+  { key: 'lifeExpectancyDivisor', label: 'Life Expectancy Divisor', format: 'text' },
+  { key: 'requiredMinimumDistribution', label: 'Required Minimum Distribution', format: 'currency' },
+  { key: 'ownerAgeAtDeath', label: 'Owner Age at Death', format: 'number' },
+  { key: 'beneficiaryAgeAtDec31Next', label: 'Beneficiary Age (Dec 31 following death)', format: 'number' },
+  { key: 'ownerHadStartedRMDs', label: 'Owner Had Started RMDs', format: 'text' }
+];
+
+// Main configuration
 export const config = {
   title: 'Beneficiary Required Minimum Distributions (RMD)',
   description: 'Calculate beneficiary RMDs using SECURE Act rules and IRS life expectancy tables',
@@ -85,6 +198,49 @@ export const config = {
         divisor = uniformLifeTable[Math.min(120, beneficiaryAge)] || 0;
         rmd = divisor > 0 ? data.accountBalance / divisor : data.accountBalance;
       }
+    } else if (data.beneficiaryType === 'child-under-21') {
+      // Account owner's child: Life expectancy until age 21, then 10-year rule
+      if (beneficiaryAge <= 21) {
+        method = "Account Owner's Child - Life Expectancy Method (Until Age 21)";
+        notes.push('Uses Single Life Expectancy Table');
+        notes.push('Life expectancy looked up once in year following death, then reduced by 1 each year');
+        notes.push('10-year rule will apply starting the year after turning 21');
+        
+        const ageForInitialLookup = benefAgeAtDec31YearAfterDeath;
+        const initialDivisor = singleLifeTable[Math.min(120, ageForInitialLookup)] || 1;
+        divisor = Math.max(1, initialDivisor - yearsSinceDeath);
+        rmd = data.accountBalance / divisor;
+      } else {
+        // After age 21, 10-year rule applies
+        method = "Account Owner's Child - 10-Year Rule (After Age 21)";
+        notes.push('Child reached age 21 - 10-year distribution rule now applies');
+        
+        // Calculate years since turning 21
+        const yearTurned21 = benefBirth.year + 21;
+        const yearAfterTurning21 = yearTurned21 + 1;
+        const yearsSinceTurning21 = data.yearOfRMD - yearAfterTurning21;
+        
+        if (yearsSinceTurning21 >= 10) {
+          rmd = 0;
+          divisor = 'N/A';
+          notes.push('10-year distribution period has ended');
+        } else if (yearsSinceTurning21 === 9) {
+          rmd = data.accountBalance;
+          divisor = 'N/A';
+          notes.push('Final year - entire balance must be withdrawn');
+        } else if (ownerStartedRMDs) {
+          // Use beneficiary's age in year after turning 21 for initial lookup
+          const benefAgeInYearAfterTurning21 = 22;
+          const initialDivisor = singleLifeTable[Math.min(120, benefAgeInYearAfterTurning21)] || 1;
+          divisor = Math.max(1, initialDivisor - yearsSinceTurning21);
+          rmd = data.accountBalance / divisor;
+          notes.push('Annual RMDs required (years 1-9) since owner had started RMDs');
+        } else {
+          rmd = 0;
+          divisor = 'N/A';
+          notes.push('No annual RMD required (owner had not started RMDs)');
+        }
+      }
     } else if (data.beneficiaryType === 'disabled-chronically-ill' ||
       (data.beneficiaryType === 'longest-timeframe' && (isPreSecure || isNotMoreThan10YearsYounger))) {
 
@@ -158,6 +314,24 @@ export const config = {
       getRBDAge
     });
 
+    // Format plan type for display
+    const planTypeLabels = {
+      'traditional-ira': 'Traditional IRA',
+      'roth-ira': 'Roth IRA',
+      'sep-ira': 'SEP IRA',
+      'simple-ira': 'SIMPLE IRA',
+      '401k': '401(k)',
+      'roth-401k': 'Roth 401(k)',
+      '403b': '403(b)',
+      '457': '457 Plan',
+      'profit-sharing': 'Profit Sharing Plan',
+      'money-purchase': 'Money Purchase Pension Plan',
+      'defined-benefit': 'Defined Benefit Plan',
+      'keogh': 'Keogh Plan',
+      'tsp': 'Thrift Savings Plan (TSP)',
+      'other': 'Other Qualified Plan'
+    };
+
     return {
       calculationMethod: method,
       yearOfRMD: data.yearOfRMD,
@@ -170,8 +344,8 @@ export const config = {
       ownerHadStartedRMDs: ownerStartedRMDs ? 'Yes' : 'No',
       accountBalance: data.accountBalance,
       lifeExpectancyDivisor: typeof divisor === 'number' ? divisor.toFixed(1) : divisor,
-      requiredMinimumDistribution: Math.round(rmd * 100) / 100,  // Round to 2 decimal places
-      planType: data.planType.toUpperCase(),
+      requiredMinimumDistribution: Math.round(rmd * 100) / 100,
+      planType: planTypeLabels[data.planType] || data.planType.toUpperCase(),
       notes,
       projections
     };
@@ -252,14 +426,17 @@ function generateProjections(data, context) {
   let usesLifeExpectancy = false;
   let uses10YearRule = false;
   let usesSurvivingSpouse = false;
+  let usesChildUnder21 = false;
   let maxYears = 30;
 
   if (data.beneficiaryType === 'surviving-spouse') {
     usesSurvivingSpouse = true;
+  } else if (data.beneficiaryType === 'child-under-21') {
+    usesChildUnder21 = true;
+    maxYears = 50;
   } else if (data.beneficiaryType === 'disabled-chronically-ill' ||
     (data.beneficiaryType === 'longest-timeframe' && (isPreSecure || isNotMoreThan10YearsYounger))) {
     usesLifeExpectancy = true;
-    // Project longer for life expectancy method
     maxYears = Math.min(50, singleLifeTable[benefAgeAtDec31YearAfterDeath] || 30);
   } else {
     uses10YearRule = true;
@@ -282,47 +459,65 @@ function generateProjections(data, context) {
         divisor = uniformLifeTable[Math.min(120, benefAge)] || 0;
         rmd = divisor > 0 ? balance / divisor : balance;
       }
+    } else if (usesChildUnder21) {
+      if (benefAge <= 21) {
+        const ageForInitialLookup = benefAgeAtDec31YearAfterDeath;
+        const initialDivisor = singleLifeTable[Math.min(120, ageForInitialLookup)] || 1;
+        divisor = Math.max(1, initialDivisor - i);
+        rmd = balance / divisor;
+      } else {
+        const yearTurned21 = benefBirth.year + 21;
+        const yearAfterTurning21 = yearTurned21 + 1;
+        const currentYear = firstRMDYear + i;
+        const yearsSinceTurning21 = currentYear - yearAfterTurning21;
+        
+        if (yearsSinceTurning21 >= 10) {
+          rmd = 0;
+        } else if (yearsSinceTurning21 === 9) {
+          rmd = balance;
+        } else if (ownerStartedRMDs) {
+          const initialDivisor = singleLifeTable[22] || 1;
+          divisor = Math.max(1, initialDivisor - yearsSinceTurning21);
+          rmd = balance / divisor;
+        } else {
+          rmd = 0;
+        }
+      }
     } else if (usesLifeExpectancy) {
-      // Always use age in first RMD year for initial lookup
       let ageForInitialLookup = benefAgeAtDec31YearAfterDeath;
-
+      
       if (isBenefOlderThanOwner && ownerStartedRMDs) {
         let ownerAgeAtDec31YearAfterDeath = (ownerDeath.year + 1) - ownerBirth.year;
         if (ownerAgeAtDec31YearAfterDeath < benefAgeAtDec31YearAfterDeath) {
           ageForInitialLookup = ownerAgeAtDec31YearAfterDeath;
         }
       }
-
+      
       const initialDivisor = singleLifeTable[Math.min(120, ageForInitialLookup)] || 1;
       divisor = Math.max(1, initialDivisor - i);
       rmd = balance / divisor;
     } else if (uses10YearRule) {
       if (i === 9) {
-        // Year 10: withdraw everything
         rmd = balance;
       } else if (ownerStartedRMDs) {
-        // Years 1-9: annual RMDs required
         const initialDivisor = singleLifeTable[Math.min(120, benefAgeAtDec31YearAfterDeath)] || 1;
         divisor = Math.max(1, initialDivisor - i);
         rmd = balance / divisor;
       } else {
-        // Years 1-9: no RMDs required
         rmd = 0;
       }
     }
 
     const startBalance = balance;
-
-    // RMD is withdrawn first, then remaining balance grows
+    
     balance -= rmd;
     if (balance < 0) balance = 0;
-
-    // Growth occurs on post-RMD balance
+    
     balance *= (1 + rate);
-
+    
     cumulativeRMD += rmd;
 
-    if (balance < 0.01) balance = 0;  // Handle rounding
+    if (balance < 0.01) balance = 0;
 
     projections.push({
       year,
