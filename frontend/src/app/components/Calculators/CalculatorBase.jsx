@@ -384,6 +384,7 @@ export const CalculatorBase = ({ config }) => {
         resolver: zodResolver(config.schema),
         defaultValues: config.defaultValues,
         mode: 'onSubmit',
+        reValidateMode: 'onSubmit'
     });
 
     const onSubmit = useCallback((data) => {
