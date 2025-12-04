@@ -1,7 +1,10 @@
 import { z } from 'zod';
 
 export const schema = z.object({
-  yearOfRMD: z.number().min(2020, 'Year must be 2020 or later').max(2100, 'Year too far in future'),
+  yearOfRMD: z.number()
+    .int('Year must be a whole number')
+    .min(2020, 'Year must be 2020 or later')
+    .max(2100, 'Year too far in future'),
   beneficiaryType: z.enum([
     'longest-timeframe',
     '10-year-rule',

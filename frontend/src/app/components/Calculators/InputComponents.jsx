@@ -67,16 +67,49 @@ TextInput.displayName = 'TextInput';
 
 // Currency Input
 const formatCurrency = (value) => {
-  if (!value) return '';
-  return new Intl.NumberFormat('en-US').format(value);
+  if (!value && value !== 0) return '';
+  const absValue = Math.abs(value);
+  const formatted = new Intl.NumberFormat('en-US').format(absValue);
+  return value < 0 ? `-${formatted}` : formatted;
 };
 
-const parseNumericInput = (input, maxLength) => {
-  const raw = input.replace(/[^0-9]/g, '');
+const parseNumericInput = (input, maxLength, allowNegative = true, allowDecimals = true) => {
+  if (input === '' || input === '-') return input === '-' && allowNegative ? '-' : '';
   
-  if (!raw || raw.length > maxLength) return null;
+  // Build regex based on what's allowed
+  let pattern = '[^0-9';
+  if (allowNegative) pattern += '-';
+  if (allowDecimals) pattern += '.';
+  pattern += ']';
   
-  const num = parseInt(raw, 10);
+  let cleaned = input.replace(new RegExp(pattern, 'g'), '');
+  
+  // Ensure only one decimal point
+  if (allowDecimals) {
+    const parts = cleaned.split('.');
+    if (parts.length > 2) {
+      cleaned = parts[0] + '.' + parts.slice(1).join('');
+    }
+  }
+  
+  // Ensure only one minus sign at the start
+  if (allowNegative) {
+    const minusCount = (cleaned.match(/-/g) || []).length;
+    if (minusCount > 1) {
+      cleaned = '-' + cleaned.replace(/-/g, '');
+    } else if (cleaned.includes('-') && !cleaned.startsWith('-')) {
+      cleaned = '-' + cleaned.replace(/-/g, '');
+    }
+  }
+  
+  // Check length (excluding minus and decimal)
+  const digitsOnly = cleaned.replace(/[^0-9]/g, '');
+  if (digitsOnly.length > maxLength) return null;
+  
+  // Return the string for partial inputs like "-" or "5."
+  if (cleaned === '-' || cleaned.endsWith('.')) return cleaned;
+  
+  const num = parseFloat(cleaned);
   return (isNaN(num) || !isFinite(num)) ? null : num;
 };
 
@@ -86,24 +119,67 @@ export const CurrencyInput = React.memo(({
   onBlur, 
   placeholder = '0', 
   disabled, 
-  maxLength = 15 
+  maxLength = 15,
+  allowNegative = true,
+  allowDecimals = true
 }) => {
+  const [inputValue, setInputValue] = useState('');
+
+  // Sync input value when value prop changes
+  useEffect(() => {
+    if (disabled) {
+      setInputValue(formatCurrency(value));
+    } else {
+      // Only update if value is different from what we're typing
+      if (value === '' || value === null || value === undefined) {
+        setInputValue('');
+      } else if (typeof value === 'number') {
+        setInputValue(String(value));
+      }
+    }
+  }, [value, disabled]);
+
   const handleChange = useCallback((e) => {
-    const parsed = parseNumericInput(e.target.value, maxLength);
-    onChange(parsed === null ? '' : parsed);
-  }, [maxLength, onChange]);
+    const input = e.target.value;
+    setInputValue(input);
+    
+    const parsed = parseNumericInput(input, maxLength, allowNegative, allowDecimals);
+    
+    if (parsed === '' || parsed === '-') {
+      onChange('');
+    } else if (parsed !== null) {
+      onChange(parsed);
+    }
+  }, [maxLength, allowNegative, allowDecimals, onChange]);
 
   const handlePaste = useCallback((e) => {
     e.preventDefault();
     const pastedText = e.clipboardData.getData('text');
-    const parsed = parseNumericInput(pastedText, maxLength);
+    const parsed = parseNumericInput(pastedText, maxLength, allowNegative, allowDecimals);
     
-    if (parsed !== null) {
-      onChange(parsed);
+    if (parsed !== null || parsed === '' || parsed === '-') {
+      setInputValue(pastedText);
+      onChange(parsed === null ? '' : parsed);
     }
-  }, [maxLength, onChange]);
+  }, [maxLength, allowNegative, allowDecimals, onChange]);
 
-  const displayValue = disabled ? formatCurrency(value) : (value ?? '');
+  const handleBlur = useCallback((e) => {
+    // Clean up trailing decimal or lone minus on blur
+    if (inputValue === '-' || inputValue.endsWith('.')) {
+      const cleaned = inputValue.replace(/[-.]$/, '');
+      const num = parseFloat(cleaned);
+      if (!isNaN(num)) {
+        setInputValue(String(num));
+        onChange(num);
+      } else {
+        setInputValue('');
+        onChange('');
+      }
+    }
+    onBlur?.(e);
+  }, [inputValue, onChange, onBlur]);
+
+  const displayValue = disabled ? formatCurrency(value) : inputValue;
 
   return (
     <div className="relative">
@@ -119,11 +195,11 @@ export const CurrencyInput = React.memo(({
       
       <input
         type="text"
-        inputMode="numeric"
+        inputMode="decimal"
         value={displayValue}
         onChange={handleChange}
         onPaste={handlePaste}
-        onBlur={onBlur}
+        onBlur={handleBlur}
         placeholder={placeholder}
         disabled={disabled}
         readOnly={disabled}
@@ -155,18 +231,46 @@ const LockIcon = ({ className }) => (
 );
 
 // Percentage Input
-const parsePercentageInput = (input, maxLength, maxDecimals) => {
-  if (input === '' || input === '-') return '';
+const parsePercentageInput = (input, maxLength, maxDecimals, allowNegative = true) => {
+  if (input === '' || (input === '-' && allowNegative)) {
+    return input === '-' ? '-' : '';
+  }
 
-  const parts = input.split('.');
-  const integerPart = parts[0].replace(/[^0-9-]/g, '');
-  const decimalPart = parts[1] || '';
+  // Build pattern
+  let pattern = '[^0-9.';
+  if (allowNegative) pattern += '-';
+  pattern += ']';
+  
+  let cleaned = input.replace(new RegExp(pattern, 'g'), '');
+  
+  // Handle multiple decimals
+  const parts = cleaned.split('.');
+  if (parts.length > 2) {
+    cleaned = parts[0] + '.' + parts.slice(1).join('');
+  }
+  
+  // Handle multiple minus signs
+  if (allowNegative) {
+    const minusCount = (cleaned.match(/-/g) || []).length;
+    if (minusCount > 1) {
+      cleaned = '-' + cleaned.replace(/-/g, '');
+    } else if (cleaned.includes('-') && !cleaned.startsWith('-')) {
+      cleaned = '-' + cleaned.replace(/-/g, '');
+    }
+  }
 
-  // Validate length constraints
-  if (integerPart.replace('-', '').length > maxLength) return null;
+  // Validate integer part length
+  const integerPart = cleaned.split('.')[0].replace('-', '');
+  if (integerPart.length > maxLength) return null;
+  
+  // Validate decimal part length
+  const decimalPart = cleaned.split('.')[1] || '';
   if (decimalPart.length > maxDecimals) return null;
 
-  const num = parseFloat(input);
+  // Return string for partial inputs
+  if (cleaned === '-' || cleaned.endsWith('.')) return cleaned;
+
+  const num = parseFloat(cleaned);
   return (isNaN(num) || !isFinite(num)) ? null : num;
 };
 
@@ -177,38 +281,71 @@ export const PercentageInput = React.memo(({
   placeholder = '0', 
   disabled, 
   maxLength = 6, 
-  maxDecimals = 2 
+  maxDecimals = 2,
+  allowNegative = true
 }) => {
+  const [inputValue, setInputValue] = useState('');
+
+  // Sync input value when value prop changes
+  useEffect(() => {
+    if (value === '' || value === null || value === undefined) {
+      setInputValue('');
+    } else if (typeof value === 'number') {
+      setInputValue(String(value));
+    } else {
+      setInputValue(value);
+    }
+  }, [value]);
+
   const handleChange = useCallback((e) => {
-    const parsed = parsePercentageInput(e.target.value, maxLength, maxDecimals);
+    const input = e.target.value;
+    setInputValue(input);
     
-    if (parsed === '') {
+    const parsed = parsePercentageInput(input, maxLength, maxDecimals, allowNegative);
+    
+    if (parsed === '' || parsed === '-') {
       onChange('');
     } else if (parsed !== null) {
       onChange(parsed);
     }
-  }, [maxLength, maxDecimals, onChange]);
+  }, [maxLength, maxDecimals, allowNegative, onChange]);
 
   const handlePaste = useCallback((e) => {
     e.preventDefault();
     const pastedText = e.clipboardData.getData('text');
-    const cleaned = pastedText.replace(/[^0-9.-]/g, '');
-    const parsed = parsePercentageInput(cleaned, maxLength, maxDecimals);
+    const parsed = parsePercentageInput(pastedText, maxLength, maxDecimals, allowNegative);
     
-    if (parsed !== null && parsed !== '') {
-      onChange(parsed);
+    if (parsed !== null || parsed === '' || parsed === '-') {
+      setInputValue(pastedText);
+      onChange(parsed === null ? '' : parsed);
     }
-  }, [maxLength, maxDecimals, onChange]);
+  }, [maxLength, maxDecimals, allowNegative, onChange]);
+
+  const handleBlur = useCallback((e) => {
+    // Clean up trailing decimal or lone minus on blur
+    if (inputValue === '-' || inputValue.endsWith('.')) {
+      const cleaned = inputValue.replace(/[-.]$/, '');
+      const num = parseFloat(cleaned);
+      if (!isNaN(num)) {
+        setInputValue(String(num));
+        onChange(num);
+      } else {
+        setInputValue('');
+        onChange('');
+      }
+    }
+    onBlur?.(e);
+  }, [inputValue, onChange, onBlur]);
 
   return (
     <div className="relative">
       <input
         type="text"
         inputMode="decimal"
-        value={value ?? ''}
+        value={inputValue}
         onChange={handleChange}
         onPaste={handlePaste}
-        onBlur={onBlur}
+        onBlur={handleBlur}
         placeholder={placeholder}
         disabled={disabled}
         className={`${getInputClassName(disabled)} pr-8`}

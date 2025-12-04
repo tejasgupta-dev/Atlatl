@@ -44,8 +44,8 @@ const formatters = {
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: 'USD',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
+            minimumFractionDigits: 2,  // Changed from 0 to 2
+            maximumFractionDigits: 2,  // Changed from 0 to 2
         }).format(value);
     },
 
@@ -56,7 +56,10 @@ const formatters = {
 
     [FORMAT_TYPES.NUMBER]: (value) => {
         if (value == null) return 'N/A';
-        return new Intl.NumberFormat('en-US').format(value);
+        return new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: 2,  // Add this
+            maximumFractionDigits: 2,  // Add this
+        }).format(value);
     },
 
     [FORMAT_TYPES.TEXT]: (value) => value || 'N/A',
