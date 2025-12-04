@@ -52,7 +52,7 @@ export default function TabContent({ tabContent }) {
                         {/* CTA Button */}
                         <div className="pt-8 md:pt-4 flex justify-center font-songer">
                             <button className="bg-bold-blue text-white font-bold py-3 px-8 shadow-md rounded-full
-                                hover:bg-white hover:text-bold-blue hover:shadow-xl 
+                                hover:bg-white hover:text-bold-blue hover:shadow-[0_0px_15px_-3px_rgba(0,0,0,0.3)] 
                                 transition-all duration-300 transform hover:-translate-y-0.5 hover:cursor-pointer">
                                 Schedule a Call
                             </button>

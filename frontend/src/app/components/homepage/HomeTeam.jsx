@@ -43,7 +43,7 @@ export default async function HomeTeam({ half_toggle = true }) {
       </div>
       
       <Link href="/team" className="font-songer bg-bold-blue text-white font-bold py-3 px-8 mt-8 shadow-md rounded-full
-          hover:bg-white hover:text-bold-blue hover:shadow-xl 
+          hover:bg-white hover:text-bold-blue hover:shadow-[0_0px_15px_-3px_rgba(0,0,0,0.3)] 
           transition-all duration-300 transform hover:-translate-y-0.5 hover:cursor-pointer">
           VIEW MORE TEAM MEMBERS
       </Link>

@@ -160,10 +160,10 @@ export default function Navbar() {
                   {/* Arrow (Absolute Positioned to keep text centered) */}
                   <div className="absolute -right-8 top-1/2 -translate-y-1/2">
                     <img 
-                      src="/images/graphic_arrow.svg" 
+                      src="/images/logo_blue.svg" 
                       alt="toggle"
                       className={`w-4 h-auto object-contain transition-transform duration-300 
-                        ${isMobileResourcesOpen ? "-rotate-90" : "rotate-90"}`}
+                        ${isMobileResourcesOpen && "rotate-180"}`}
                     />
                   </div>
                 </button>

@@ -1,63 +1,58 @@
-"use client"
+import ContactForm from "@/app/components/contact/ContactForm";
 
-import Link from 'next/link'; 
-import "./styles.css"
-
-function InputField({prompt, id, width, placeholder}) {
-  return (
-    <div className="input-field">
-      <label for={id}>{prompt}</label>
-      <input id={id} style={{  width: width  }} placeholder={placeholder}></input>
-    </div>
-  )
-}
-
-function MultilineInputField({prompt, id, width, height, placeholder}) {
-  return (
-    <div className="input-field">
-      <label for={id}>{prompt}</label>
-      <textarea id={id} style={{  width: width   }} rows={height} placeholder={placeholder}></textarea>
-    </div>
-  )
-}
+// Google Maps
+const mapContainerStyle = { width: "100%", height: "100%", borderRadius: "20px" };
 
 export default function ContactUsPage() {
-  return (<div className="contact-us-page">
+  return (
+    <main className="bg-white">
+      <div className="container mx-auto px-6 xl:px-20 py-16 md:py-24">
+        {/* --- PAGE TITLE --- */}
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-songer text-darker-bold-blue font-bold text-center uppercase tracking-wide mb-16">
+          LET'S CONNECT
+        </h1>
 
-    <h1>LET'S CONNECT</h1>
-    <div className="extended-form">
-      <div className="info-box">
-        <div>
-        <img src="/Graphic_Arrow_Black.png" style={{ height: "60px" }}></img>
-        <h2>ATLATL <br/> ADVISERS</h2>
+        <div className="flex flex-col gap-12 lg:flex-row lg:gap-24 items-start">
+          
+          {/* --- LEFT COLUMN: INFO --- */}
+          <div className="w-full lg:w-5/12 items-center flex flex-col gap-8">
+            <div className="max-w-[350px]">
+              <img src="/images/Atlatl_Logo_Blue.svg" alt="Atlatl Advisers" className="w-full object-contain" />
+            </div>
+
+            <div className="font-work-sans text-darker-bold-blue text-xl space-y-6 pl-5 -mt-10">
+              <p>
+                608-351-4500 <br />
+                info@atlatladvisers.com
+              </p>
+              <p>
+                2921 Landmark Place Suite 501 <br />
+                Madison, WI 53711
+              </p>
+            </div>
+
+            <button className="bg-bold-blue text-white font-bold py-3 px-8 shadow-md rounded-full uppercase font-songer
+                hover:bg-white hover:text-bold-blue hover:shadow-[0_0px_15px_-3px_rgba(0,0,0,0.3)] 
+                transition-all duration-300 transform hover:-translate-y-0.5 hover:cursor-pointer">
+              Schedule a Call
+            </button>
+          </div>
+
+          {/* --- RIGHT COLUMN: FORM --- */}
+          <div className="w-full lg:w-7/12">
+            <ContactForm />
+          </div>
         </div>
-        <div>
-          <p>608-351-4500</p>
-          <p>info@atlatladvisers.com</p>
+
+        {/* --- MAP SECTION --- */}
+        <div className="w-full h-[400px] mt-24 rounded-3xl overflow-hidden shadow-lg border border-gray-200">
+          <iframe width="100%" height="600" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://maps.google.com/maps?width=100%25&amp;height=600&amp;hl=en&amp;q=2921%20Landmark%20Pl%20Suite%20501+(My%20Business%20Name)&amp;t=&amp;z=15&amp;ie=UTF8&amp;iwloc=B&amp;output=embed">
+            <a href="https://www.mapsdirections.info/de/evolkerung-auf-einer-karte-berechnen/">Bevölkerung visualisieren Karte
+            </a>
+          </iframe>
         </div>
-        <div>
-          2921 Landmark Place Suite 501 <br /> Madison, WI 53711
-        </div>
-        <button>SCHEDULE A MEETING</button>
+
       </div>
-      <div className="contact-form">
-        <div className="name-field">
-          <InputField prompt={"First Name"} id={"first-name-input"} width={"100%"} />
-          <InputField prompt={"Last Name"} id={"last-name-input"} width={"100%"} />
-        </div>
-        <InputField prompt={"Email"} id={"email-input"} width={"100%"} />
-        <InputField prompt={"Phone"} id={"phone-input"} width={"100%"} />
-        <InputField prompt={"What services are you inquiring about?"} id={"services-input"} width={"100%"} />
-        <MultilineInputField prompt={"Message"} id={"message-input"} width={"100%"} height={"6"} placeholder={"Type your message here..."}/>
-
-        <button style={{  margin: "10px 30% 20px 30%"   }}>SUBMIT</button>
-      </div>
-    </div>
-    
-    {/** The interactive Map */}
-    <div></div>
-
-    <h1>QUESTIONS?</h1>
-    <Link href="/" className="faq">VIEW FAQ</Link>
-  </div>);
+    </main>
+  );
 }

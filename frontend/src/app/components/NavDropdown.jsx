@@ -37,9 +37,9 @@ export default function NavDropdown({ item, subItems, navLinkStyles, underlineSt
                   {/* Arrow animation */}
                   <span className="ml-2 opacity-0 -translate-x-2 group-hover/item:opacity-100 group-hover/item:translate-x-0 transition-all text-sm">
                     <img 
-                      src="/images/graphic_arrow.svg" 
+                      src="/images/logo_blue.svg" 
                       alt="toggle"
-                      className={`w-3 h-auto object-contain`}
+                      className={`w-3 h-auto object-contain rotate-90`}
                     />
                   </span>
                 </span>
