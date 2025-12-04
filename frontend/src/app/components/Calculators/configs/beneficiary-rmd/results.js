@@ -1,5 +1,7 @@
 export const results = [
-  { key: 'yearOfRMD', label: 'Year of RMD', format: 'number' },
+  // text instead of number to avoid commas in between 4 digits
+  // to output 2025 instead of 2,025
+  { key: 'yearOfRMD', label: 'Year of RMD', format: 'text' },  
   { key: 'calculationMethod', label: 'Calculation Method', format: 'text' },
   { key: 'beneficiaryName', label: 'Beneficiary Name', format: 'text' },
   { key: 'ownerName', label: 'Owner Name', format: 'text' },
