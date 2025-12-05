@@ -4,7 +4,7 @@ import {
   calculateMonthlyPayment,
   calculateRemainingBalance,
   annualRateToMonthly
-} from '../shared/utils';
+} from '../../utils';
 
 
 // CALCULATOR-SPECIFIC UTILITIES
