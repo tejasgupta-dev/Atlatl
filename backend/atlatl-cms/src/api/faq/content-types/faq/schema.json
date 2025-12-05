@@ -1,0 +1,22 @@
+{
+  "kind": "singleType",
+  "collectionName": "faqs",
+  "info": {
+    "singularName": "faq",
+    "pluralName": "faqs",
+    "displayName": "FAQ"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "topics": {
+      "type": "component",
+      "component": "faq.topic-question-block",
+      "repeatable": true,
+      "required": true,
+      "min": 1
+    }
+  }
+}

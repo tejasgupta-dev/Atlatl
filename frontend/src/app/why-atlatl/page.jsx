@@ -1,6 +1,7 @@
-"use client";
 import "./page.css";
 import Image from "next/image";
+import HomeTeam from "../components/homepage/HomeTeam";
+import CtaSection from "../components/homepage/CtaSection";
 
 export default function WhyAtlatlPage() {
     return (
@@ -108,7 +109,7 @@ export default function WhyAtlatlPage() {
                     <div className="commitment-box">
                         <Image
                             src="/compass.svg"
-                            alt="Quality Logo"
+                            alt="commitment logo"
                             width={50}
                             height={50}
                             className="commitment-logo"
@@ -122,7 +123,7 @@ export default function WhyAtlatlPage() {
                     <div className="commitment-box">
                         <Image
                             src="/shield-half.svg"
-                            alt="Innovation Logo"
+                            alt="commitment logo"
                             width={50}
                             height={50}
                             className="commitment-logo"
@@ -136,7 +137,7 @@ export default function WhyAtlatlPage() {
                     <div className="commitment-box">
                         <Image
                             src="/book.svg"
-                            alt="Support Logo"
+                            alt="commitment logo"
                             width={50}
                             height={50}
                             className="commitment-logo"
@@ -174,7 +175,7 @@ export default function WhyAtlatlPage() {
                         <div className="our-purpose-right-body-header">
                             <Image
                                 src="/compass.svg"
-                                alt="Quality Logo"
+                                alt="commitment-logo"
                                 width={50}
                                 height={50}
                                 className="commitment-logo"
@@ -190,7 +191,7 @@ export default function WhyAtlatlPage() {
                         <div className="our-purpose-right-body-header">
                             <Image
                                 src="/compass.svg"
-                                alt="Quality Logo"
+                                alt="commitment-logo"
                                 width={50}
                                 height={50}
                                 className="commitment-logo"
@@ -202,6 +203,14 @@ export default function WhyAtlatlPage() {
                         </p>
                     </div>
                 </div>
+            </section>
+
+            <section className="py-16 md:py-24 bg-dark-blue text-white">
+                <HomeTeam half_toggle={false}/>
+            </section>
+
+            <section className="w-full bg-darker-light-blue">
+                <CtaSection />
             </section>
         </main>
     );

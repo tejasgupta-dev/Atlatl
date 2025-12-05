@@ -1,0 +1,21 @@
+{
+  "collectionName": "components_faq_topic_question_blocks",
+  "info": {
+    "displayName": "Topic Question Block"
+  },
+  "options": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "questionblocks": {
+      "type": "component",
+      "component": "faq.question-block",
+      "repeatable": true,
+      "required": true,
+      "min": 1
+    }
+  },
+  "config": {}
+}
