@@ -133,8 +133,8 @@ export default function Footer() {
         "
       >
         <div className="flex justify-center gap-5">
-          <img src="/app-store.svg" alt="App Store" className="w-[150px]" />
-          <img src="/google-play.svg" alt="Google Play" className="w-[200px]" />
+          <img src="/images/app-store.svg" alt="App Store" className="w-[150px]" />
+          <img src="/images/google-play.svg" alt="Google Play" className="w-[200px]" />
         </div>
         <p>© 2025 Atlatl Advisers. All Rights Reserved.</p>
       </div>
