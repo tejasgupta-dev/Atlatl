@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
+// ============================================================================
 // DATE UTILITIES
+// ============================================================================
 
 export const parseDate = (dateStr) => {
   const d = new Date(dateStr + 'T00:00:00');
@@ -34,7 +36,9 @@ export const getMonthsBetween = (startDateStr, endDateStr) => {
   );
 };
 
+// ============================================================================
 // FINANCIAL UTILITIES
+// ============================================================================
 
 export const roundCurrency = (amount) => {
   return Math.round(amount * 100) / 100;
@@ -54,9 +58,46 @@ export const formatCurrency = (value) => {
   }).format(value);
 };
 
-// MORTGAGE CALCULATION UTILITIES
+// ============================================================================
+// INVESTMENT GROWTH UTILITIES
+// ============================================================================
 
 export const annualRateToMonthly = (annualRatePercent) => {
+  return Math.pow(1 + annualRatePercent / 100, 1 / 12) - 1;
+};
+
+export const calculateCompoundGrowth = (principal, monthlyRate, months) => {
+  return principal * Math.pow(1 + monthlyRate, months);
+};
+
+export const calculateFutureValueAnnuity = (monthlyContribution, monthlyRate, months) => {
+  if (monthlyRate === 0) return monthlyContribution * months;
+  
+  return monthlyContribution * 
+    ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate) * 
+    (1 + monthlyRate); // Annuity-due (beginning of period)
+};
+
+// ============================================================================
+// TAX UTILITIES
+// ============================================================================
+
+export const CAPITAL_GAINS_TAX_RATE = 0.15; // Standard 15% for most taxpayers
+
+export const calculateCapitalGainsTax = (principal, currentValue, taxRate = CAPITAL_GAINS_TAX_RATE) => {
+  const gains = Math.max(0, currentValue - principal);
+  return gains * taxRate;
+};
+
+export const calculateAfterTaxValue = (grossValue, taxRate) => {
+  return grossValue * (1 - taxRate);
+};
+
+// ============================================================================
+// MORTGAGE CALCULATION UTILITIES
+// ============================================================================
+
+export const monthlyRateFromAnnual = (annualRatePercent) => {
   return (annualRatePercent / 100) / 12;
 };
 
@@ -81,7 +122,9 @@ export const calculateRemainingBalance = (principal, monthlyRate, monthlyPayment
     (Math.pow(1 + monthlyRate, totalMonths) - 1);
 };
 
+// ============================================================================
 // VALIDATION UTILITIES (Zod Schemas)
+// ============================================================================
 
 export const createDateValidator = (fieldName) => {
   return z.string()
@@ -90,4 +133,25 @@ export const createDateValidator = (fieldName) => {
       val => !isNaN(new Date(val + 'T00:00:00').getTime()),
       'Invalid date - use MM/DD/YYYY format'
     );
+};
+
+export const createAgeValidator = (min = 0, max = 120) => {
+  return z.number()
+    .int('Must be a whole number')
+    .min(min, `Must be ${min} or greater`)
+    .max(max, `Must be ${max} or less`);
+};
+
+export const createPercentageValidator = (min = 0, max = 100) => {
+  return z.number()
+    .min(min, `Must be ${min}% or greater`)
+    .max(max, `Must be ${max}% or less`);
+};
+
+export const createCurrencyValidator = (min = 0) => {
+  return z.number().min(min, `Must be ${min} or greater`);
+};
+
+export const createBooleanSelectValidator = () => {
+  return z.string().transform(val => val === 'true');
 };
