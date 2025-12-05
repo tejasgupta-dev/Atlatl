@@ -66,8 +66,8 @@ export const annualRateToMonthly = (annualRatePercent) => {
   return Math.pow(1 + annualRatePercent / 100, 1 / 12) - 1;
 };
 
-export const calculateCompoundGrowth = (principal, monthlyRate, months) => {
-  return principal * Math.pow(1 + monthlyRate, months);
+export const calculateCompoundGrowth = (principal, rate, periods) => {
+  return principal * Math.pow(1 + rate, periods);
 };
 
 export const calculateFutureValueAnnuity = (monthlyContribution, monthlyRate, months) => {
@@ -76,6 +76,10 @@ export const calculateFutureValueAnnuity = (monthlyContribution, monthlyRate, mo
   return monthlyContribution * 
     ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate) * 
     (1 + monthlyRate); // Annuity-due (beginning of period)
+};
+
+export const calculateAfterTaxReturn = (returnRate, taxRate) => {
+  return returnRate * (1 - taxRate);
 };
 
 // ============================================================================
