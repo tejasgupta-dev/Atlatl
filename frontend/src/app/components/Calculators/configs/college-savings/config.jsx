@@ -32,126 +32,126 @@ const defaults = {
 // INPUTS
 const inputs = [
   // === Child's Information ===
-  { 
-    name: 'currentAge', 
-    label: "Child's Current Age", 
+  {
+    name: 'currentAge',
+    label: "Child's Current Age",
     type: 'number',
     required: true,
     section: "Child's Information",
-    hint: 'Current age of your child. The difference between their current age and college start age is the number of years you have to save.' 
+    hint: 'Current age of your child. The difference between their current age and college start age is the number of years you have to save.'
   },
-  { 
-    name: 'ageStartCollege', 
-    label: 'Age to Start College', 
+  {
+    name: 'ageStartCollege',
+    label: 'Age to Start College',
     type: 'number',
     required: true,
     section: "Child's Information",
-    hint: 'The age your child will begin college. Default is 18, but can be any age up to 25.' 
+    hint: 'The age your child will begin college. Default is 18, but can be any age up to 25.'
   },
-  { 
-    name: 'yearsInCollege', 
-    label: 'Number of Years in College', 
+  {
+    name: 'yearsInCollege',
+    label: 'Number of Years in College',
     type: 'number',
     required: true,
     section: "Child's Information",
-    hint: 'Expected number of years your child will attend college (typically 4 years for undergraduate)' 
+    hint: 'Expected number of years your child will attend college (typically 4 years for undergraduate)'
   },
 
   // === College Costs ===
-  { 
-    name: 'annualTuition', 
-    label: 'Annual Tuition (Current Cost)', 
+  {
+    name: 'annualTuition',
+    label: 'Annual Tuition (Current Cost)',
     type: 'number',
     format: 'currency',
     required: true,
     section: 'College Costs',
-    hint: 'Current estimated cost of one year of tuition and books. Average 2024-25: Public in-state $11,610, Public out-of-state $30,780, Private $43,350' 
+    hint: 'Current estimated cost of one year of tuition and books. Average 2024-25: Public in-state $11,610, Public out-of-state $30,780, Private $43,350'
   },
-  { 
-    name: 'roomAndBoard', 
-    label: 'Annual Room & Board (Current Cost)', 
+  {
+    name: 'roomAndBoard',
+    label: 'Annual Room & Board (Current Cost)',
     type: 'number',
     format: 'currency',
     required: true,
     section: 'College Costs',
-    hint: 'Current estimated cost of one-year room, board, and other expenses. Average 2024-25: Public $18,300, Private $19,640' 
+    hint: 'Current estimated cost of one-year room, board, and other expenses. Average 2024-25: Public $18,300, Private $19,640'
   },
-  { 
-    name: 'educationInflation', 
-    label: 'Education Cost Inflation Rate', 
+  {
+    name: 'educationInflation',
+    label: 'Education Cost Inflation Rate',
     type: 'number',
     format: 'percentage',
     step: 0.1,
     required: true,
     section: 'College Costs',
-    hint: 'Expected annual increase in college costs. Historical average: 4.8% over past 30 years, recent: ~3%' 
+    hint: 'Expected annual increase in college costs. Historical average: 4.8% over past 30 years, recent: ~3%'
   },
 
   // === Savings Plan ===
-  { 
-    name: 'currentSavings', 
-    label: 'Current Amount Saved', 
+  {
+    name: 'currentSavings',
+    label: 'Current Amount Saved',
     type: 'number',
     format: 'currency',
     required: true,
     section: 'Savings Plan',
-    hint: 'Total amount you currently have saved for college education' 
+    hint: 'Total amount you currently have saved for college education'
   },
-  { 
-    name: 'monthlyContribution', 
-    label: 'Monthly Contribution', 
+  {
+    name: 'monthlyContribution',
+    label: 'Monthly Contribution',
     type: 'number',
     format: 'currency',
     required: true,
     section: 'Savings Plan',
-    hint: 'Dollar amount you plan to save per month. All amounts assumed to be added at the beginning of each month.' 
+    hint: 'Dollar amount you plan to save per month. All amounts assumed to be added at the beginning of each month.'
   },
-  { 
-    name: 'rateOfReturn', 
-    label: 'Expected Annual Rate of Return', 
+  {
+    name: 'rateOfReturn',
+    label: 'Expected Annual Rate of Return',
     type: 'number',
     format: 'percentage',
     step: 0.1,
     required: true,
     section: 'Savings Plan',
-    hint: 'Expected annual return on investments. S&P 500: 11.2% avg 1970-2024, 14.9% avg last 10 years. Savings accounts: much lower but safer.' 
+    hint: 'Expected annual return on investments. S&P 500: 11.2% avg 1970-2024, 14.9% avg last 10 years. Savings accounts: much lower but safer.'
   },
 ];
 
 // RESULTS
 const results = [
-  { 
-    key: 'yearsUntilCollege', 
-    label: 'Years Until College Starts', 
+  {
+    key: 'yearsUntilCollege',
+    label: 'Years Until College Starts',
     format: 'number'
   },
-  { 
-    key: 'totalCollegeCost', 
-    label: 'Total Future Cost of College', 
+  {
+    key: 'totalCollegeCost',
+    label: 'Total Future Cost of College',
     format: 'currency',
     description: 'Total cost including inflation over all college years'
   },
-  { 
-    key: 'totalSavingsAtCollegeStart', 
-    label: 'Total Savings at College Start', 
+  {
+    key: 'totalSavingsAtCollegeStart',
+    label: 'Total Savings at College Start',
     format: 'currency',
     description: 'Expected savings balance when college begins'
   },
-  { 
-    key: 'shortfallOrSurplus', 
-    label: 'Shortfall or Surplus', 
+  {
+    key: 'shortfallOrSurplus',
+    label: 'Shortfall or Surplus',
     format: 'currency',
     description: 'Negative = shortfall (need more), Positive = surplus (more than needed)'
   },
-  { 
-    key: 'percentageCovered', 
-    label: 'Percentage of Costs Covered', 
+  {
+    key: 'percentageCovered',
+    label: 'Percentage of Costs Covered',
     format: 'percentage',
     description: 'Percentage of total college costs covered by savings'
   },
-  { 
-    key: 'monthlyNeededToFullyFund', 
-    label: 'Monthly Savings Needed to Fully Fund', 
+  {
+    key: 'monthlyNeededToFullyFund',
+    label: 'Monthly Savings Needed to Fully Fund',
     format: 'currency',
     description: 'Monthly contribution required to cover 100% of projected costs'
   },
@@ -213,18 +213,18 @@ const calculate = (data) => {
 
     for (let iteration = 0; iteration < 50; iteration++) {
       const testAnnual = (low + high) / 2;
-      
+
       let testBalance = currentSavings;
       for (let y = 0; y < yearsUntilCollege; y++) {
         testBalance = testBalance * (1 + annualRate) + testAnnual * contributionFactor;
       }
-      
+
       for (let y = 0; y < yearsInCollege; y++) {
-        testBalance = testBalance * (1 + annualRate) + 
-                     testAnnual * contributionFactor - 
-                     collegeCostsByYear[y].cost;
+        testBalance = testBalance * (1 + annualRate) +
+          testAnnual * contributionFactor -
+          collegeCostsByYear[y].cost;
       }
-      
+
       if (Math.abs(testBalance) < 1) {
         bestAnnual = testAnnual;
         break;
@@ -235,7 +235,7 @@ const calculate = (data) => {
         bestAnnual = testAnnual;
       }
     }
-    
+
     monthlyNeededToFullyFund = bestAnnual / 12;
   } else {
     monthlyNeededToFullyFund = Math.max(0, totalCollegeCost - currentSavings);
